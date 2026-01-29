@@ -16,15 +16,24 @@ interface PendingRequest {
 }
 
 export default function (pi: ExtensionAPI) {
+  console.log("[pi-island] Extension loaded");
+  
   let client: net.Socket | null = null;
   let connected = false;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   const pendingRequests = new Map<string, PendingRequest>();
 
+  // Session context (set on session_start)
+  let currentSessionId: string | null = null;
+
   // Helper to send messages to the UI
   function send(type: string, payload: Record<string, unknown>) {
     if (client && connected) {
-      const message = JSON.stringify({ type, payload }) + "\n";
+      // Include sessionId in all messages
+      const message = JSON.stringify({
+        type,
+        payload: { ...payload, sessionId: currentSessionId },
+      }) + "\n";
       client.write(message);
     }
   }
@@ -41,12 +50,7 @@ export default function (pi: ExtensionAPI) {
     client.on("connect", () => {
       connected = true;
       console.log("[pi-island] Connected to Pi Island");
-
-      // Send handshake
-      send("HANDSHAKE", {
-        pid: process.pid,
-        project: process.cwd(),
-      });
+      // Handshake is sent in session_start after we have context
     });
 
     client.on("data", (data) => {
@@ -95,6 +99,17 @@ export default function (pi: ExtensionAPI) {
         }
         break;
       }
+      case "SEND_MESSAGE": {
+        const text = msg.payload?.text as string;
+        const sessionId = msg.payload?.sessionId as string;
+        if (text && sessionId === currentSessionId) {
+          // TODO: Inject message into Pi agent
+          // For now, log it - Pi doesn't have a direct API for injecting user input
+          console.log(`[pi-island] Received message from UI: ${text}`);
+          // Future: Could use ctx.ui.notify or find another way to inject
+        }
+        break;
+      }
       case "INTERRUPT": {
         // Future: handle interrupt requests
         break;
@@ -104,8 +119,23 @@ export default function (pi: ExtensionAPI) {
 
   // Session lifecycle
   pi.on("session_start", async (_event, ctx) => {
+    // Get session ID from session manager
+    const sessionFile = ctx.sessionManager.getSessionFile();
+    currentSessionId = sessionFile
+      ? sessionFile.split("/").pop()?.replace(".jsonl", "").split("_").pop() ?? null
+      : crypto.randomUUID();
+
     connect();
-    send("STATUS", { state: "idle" });
+
+    // Send handshake after connection (or queue it)
+    setTimeout(() => {
+      send("HANDSHAKE", {
+        pid: process.pid,
+        project: process.cwd(),
+        model: ctx.model?.id ?? undefined,
+      });
+      send("STATUS", { state: "idle" });
+    }, 100);
   });
 
   pi.on("session_shutdown", async () => {
@@ -131,17 +161,65 @@ export default function (pi: ExtensionAPI) {
     send("STATUS", { state: "thinking" });
   });
 
-  pi.on("turn_end", async () => {
+  pi.on("turn_end", async (event) => {
     send("STATUS", { state: "idle" });
+
+    // Send assistant message if present
+    if (event.message) {
+      // Extract text content from message
+      const content = event.message.content;
+      let text = "";
+      if (typeof content === "string") {
+        text = content;
+      } else if (Array.isArray(content)) {
+        for (const block of content) {
+          if (block.type === "text") {
+            text += block.text + "\n";
+          }
+        }
+      }
+
+      if (text.trim()) {
+        send("MESSAGE", {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: text.trim(),
+          timestamp: Date.now(),
+        });
+      }
+    }
+  });
+
+  // User input - capture before agent processes
+  pi.on("input", async (event) => {
+    if (event.text) {
+      send("MESSAGE", {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: event.text,
+        timestamp: Date.now(),
+      });
+    }
+    return { action: "continue" };
   });
 
   // Tool execution
   pi.on("tool_call", async (event, ctx) => {
-    const { toolName, input } = event;
+    const { toolName, toolCallId, input } = event;
 
+    // Send tool start status
     send("TOOL_START", {
       tool: toolName,
       input: input,
+    });
+
+    // Also send as a message for chat display
+    send("MESSAGE", {
+      id: toolCallId ?? crypto.randomUUID(),
+      role: "toolCall",
+      toolName: toolName,
+      input: input,
+      timestamp: Date.now(),
     });
 
     // Check if this tool requires permission (Phase 2 implementation)
@@ -191,7 +269,7 @@ export default function (pi: ExtensionAPI) {
   pi.on("tool_result", async (event) => {
     send("TOOL_END", {
       tool: event.toolName,
-      isError: event.isError,
+      success: !event.isError,
     });
   });
 }
