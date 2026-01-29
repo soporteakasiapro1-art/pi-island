@@ -84,8 +84,38 @@ class PiSessionSimulator {
     await this.delay(50);
   }
 
-  async toolEnd(tool, success = true) {
+  async toolEnd(tool, success = true, result = null) {
     this.send("TOOL_END", { tool, success });
+    await this.delay(50);
+  }
+
+  async toolCallWithResult(tool, input, result) {
+    // Send as message for chat display
+    const id = crypto.randomUUID();
+    this.send("MESSAGE", {
+      id,
+      role: "toolCall",
+      toolName: tool,
+      input,
+      timestamp: Date.now(),
+    });
+    await this.delay(50);
+
+    // Send tool start
+    this.send("TOOL_START", { tool, input });
+    await this.delay(100);
+
+    // Send tool result update
+    this.send("TOOL_RESULT", {
+      id,
+      tool,
+      result,
+      success: true,
+    });
+    await this.delay(50);
+
+    // Send tool end
+    this.send("TOOL_END", { tool, success: true });
     await this.delay(50);
   }
 
@@ -127,29 +157,56 @@ async function main() {
     await session2.userMessage("What's the status of the build?");
     await session2.status("thinking");
     await session2.assistantMessage("I'll check the build status for you.");
-    await session2.toolStart("bash", { command: "npm run build" });
+
+    // Session 2: Bash command with result
+    await session2.toolCallWithResult(
+      "bash",
+      { command: "npm run build" },
+      `> project@1.0.0 build
+> tsc && vite build
+
+src/index.ts:42:5 - error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/utils.ts:15:3 - warning: Unused variable 'tempData'
+
+Build failed with 1 error and 1 warning.`
+    );
 
     // Session 1: Response with tool call
-    await session1.assistantMessage("I'll analyze the function and suggest improvements.");
-    
-    // Send tool call as a message
-    session1.send("MESSAGE", {
-      id: crypto.randomUUID(),
-      role: "toolCall",
-      toolName: "read",
-      input: { path: "src/utils.ts" },
-      timestamp: Date.now(),
-    });
-    await session1.delay(50);
-    
-    await session1.toolStart("read", { path: "src/utils.ts" });
-    await session1.delay(200);
-    await session1.toolEnd("read", true);
+    await session1.assistantMessage("I'll analyze the function and suggest improvements. Let me read the file first.");
 
-    // Session 2: Tool completes
-    await session2.delay(200);
-    await session2.toolEnd("bash", true);
-    await session2.assistantMessage("Build completed successfully with 0 errors.");
+    // Session 1: Read file with result
+    await session1.toolCallWithResult(
+      "read",
+      { path: "src/utils.ts" },
+      `import { useState } from 'react';
+
+export function formatDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return \`\${year}-\${month}-\${day}\`;
+}
+
+export function debounce<T extends (...args: any[]) => void>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null;
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}`
+    );
+
+    // Session 2: Show error analysis
+    await session2.assistantMessage("The build failed with a type error. The issue is on line 42 of src/index.ts where a string is being passed where a number is expected.");
+
+    // Session 1: Suggest fix
+    await session1.assistantMessage("I can see the utility functions. The code looks clean, but I notice the debounce function could benefit from using a more specific type for the timeout. Would you like me to improve it?");
+
+    // Final status
+    await session1.status("idle");
     await session2.status("idle");
 
     // Session 1: Continue work
