@@ -770,8 +770,9 @@ class ManagedSession: Identifiable, Equatable {
             // Get state to capture model, thinking level, etc.
             try await rpcClient?.getState()
 
-            // Fetch available models
+            // Fetch available models and commands
             await fetchAvailableModels()
+            await fetchAvailableCommands()
 
             phase = .idle
             logger.info("Session started, phase=idle, messages count: \(self.messages.count)")
@@ -839,68 +840,6 @@ class ManagedSession: Identifiable, Equatable {
         }
     }
 
-    func setThinkingLevel(_ level: ThinkingLevel) async {
-        guard isLive, let client = rpcClient else { return }
-        do {
-            try await client.setThinkingLevel(level)
-            try await Task.sleep(for: .milliseconds(100))
-            try await client.getState()
-        } catch {
-            logger.error("Failed to set thinking level: \(error.localizedDescription)")
-        }
-    }
-
-    func compact() async {
-        guard isLive, let client = rpcClient else { return }
-        do {
-            try await client.compact()
-        } catch {
-            logger.error("Failed to compact: \(error.localizedDescription)")
-        }
-    }
-
-    /// Execute a slash command, returning a message to display (if any)
-    func executeCommand(_ command: SlashCommand) async -> String? {
-        switch command {
-        case .help:
-            return SlashCommand.helpText
-
-        case .model(let filter):
-            if let filter = filter {
-                // Find and switch to matching model
-                let lowered = filter.lowercased()
-                if let match = availableModels.first(where: {
-                    $0.id.lowercased().contains(lowered) ||
-                    ($0.name?.lowercased().contains(lowered) ?? false)
-                }) {
-                    await setModel(provider: match.provider, modelId: match.id)
-                    return "Switched to \(match.displayName)"
-                } else {
-                    return "No model matching '\(filter)' found"
-                }
-            } else {
-                await cycleModel()
-                return nil
-            }
-
-        case .thinking(let level):
-            if let level = level {
-                await setThinkingLevel(level)
-                return "Thinking level: \(level.rawValue)"
-            } else {
-                await cycleThinkingLevel()
-                return "Thinking level: \(thinkingLevel.rawValue)"
-            }
-
-        case .compact:
-            await compact()
-            return "Context compacted"
-
-        case .prompt:
-            return nil
-        }
-    }
-
     func fetchAvailableModels() async {
         guard isLive, let client = rpcClient else { return }
         do {
@@ -925,6 +864,38 @@ class ManagedSession: Identifiable, Equatable {
     /// Models grouped by provider
     var modelsByProvider: [String: [RPCModel]] {
         Dictionary(grouping: availableModels, by: { $0.provider })
+    }
+
+    // MARK: - Slash Commands
+
+    /// Available slash commands (fetched from Pi)
+    var availableCommands: [SlashCommandInfo] = []
+
+    /// Fetch available commands for completion
+    func fetchAvailableCommands() async {
+        guard isLive, let client = rpcClient else {
+            logger.warning("fetchAvailableCommands: not live or no client")
+            return
+        }
+        do {
+            logger.info("Fetching available commands...")
+            availableCommands = try await client.getCommands()
+            logger.info("Fetched \(self.availableCommands.count) available commands: \(self.availableCommands.map { $0.name }.joined(separator: ", "))")
+        } catch {
+            logger.error("Failed to fetch commands: \(error.localizedDescription)")
+        }
+    }
+
+    /// Execute a slash command (sends as a prompt - Pi handles command parsing)
+    func executeCommand(_ command: String, args: String? = nil) async {
+        // Build the full command text (with leading slash if not present)
+        var fullCommand = command.hasPrefix("/") ? command : "/" + command
+        if let args = args, !args.isEmpty {
+            fullCommand += " " + args
+        }
+
+        // Use sendPrompt - Pi handles slash commands internally
+        await sendPrompt(fullCommand)
     }
 
     // MARK: - Callbacks

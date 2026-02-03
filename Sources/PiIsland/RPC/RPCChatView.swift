@@ -1,5 +1,8 @@
 import MarkdownUI
+import OSLog
 import SwiftUI
+
+private let logger = Logger(subsystem: "com.pi-island", category: "ChatView")
 
 // MARK: - SessionChatView
 
@@ -7,20 +10,34 @@ import SwiftUI
 struct SessionChatView: View {
     @Bindable var session: ManagedSession
     @State private var inputText = ""
+    @State private var showCommandCompletion = false
+    @State private var selectedCommandIndex = 0
     @FocusState private var isInputFocused: Bool
+
+    /// Filtered commands based on input
+    private var filteredCommands: [SlashCommandInfo] {
+        guard inputText.hasPrefix("/") else { return [] }
+        let query = String(inputText.dropFirst()).lowercased()
+        if query.isEmpty {
+            return session.availableCommands
+        }
+        return session.availableCommands.filter {
+            $0.displayName.lowercased().contains(query)
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             // Header
             chatHeader
-            
+
             // Messages - inverted scroll, newest at bottom
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     LazyVStack(alignment: .leading, spacing: 8) {
                         // Anchor at top (visual bottom due to inversion)
                         Color.clear.frame(height: 1).id("bottom")
-                        
+
                         // Messages in reverse order (oldest first in array, appear at bottom)
                         ForEach(session.messages.reversed()) { message in
                             MessageRow(message: message)
@@ -70,29 +87,66 @@ struct SessionChatView: View {
 
             // Input bar (only for live sessions)
             if session.isLive {
-                inputBar
+                VStack(spacing: 0) {
+                    // Command completion popover
+                    if showCommandCompletion && !filteredCommands.isEmpty {
+                        commandCompletionView
+                    }
+                    inputBar
+                }
             }
         }
         .frame(maxHeight: .infinity, alignment: .top)
+        .onChange(of: inputText) { _, newValue in
+            // Show completion when typing /
+            let shouldShow = newValue.hasPrefix("/") && !filteredCommands.isEmpty
+            logger.info("Input changed: '\(newValue)', hasPrefix: \(newValue.hasPrefix("/")), availableCommands: \(self.session.availableCommands.count), filtered: \(self.filteredCommands.count), shouldShow: \(shouldShow)")
+            showCommandCompletion = shouldShow
+            selectedCommandIndex = 0
+        }
+        .onAppear {
+            logger.info("ChatView appeared, availableCommands: \(self.session.availableCommands.count)")
+        }
     }
-    
+
     private var chatHeader: some View {
         HStack(spacing: 12) {
             // Status indicator (replaces chevron)
             Circle()
                 .fill(phaseColor)
                 .frame(width: 8, height: 8)
-            
+
             Text(session.projectName)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(.white.opacity(0.85))
                 .lineLimit(1)
-            
+
             Spacer()
         }
         .padding(.vertical, 12)
     }
 
+    private var commandCompletionView: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach(Array(filteredCommands.prefix(8).enumerated()), id: \.element.id) { index, cmd in
+                    CommandCompletionRow(
+                        command: cmd,
+                        isSelected: index == selectedCommandIndex
+                    )
+                    .onTapGesture {
+                        selectCommand(cmd)
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .frame(maxHeight: 200)
+        .background(Color.black.opacity(0.9))
+        .clipShape(.rect(cornerRadius: 8))
+        .padding(.horizontal, 12)
+        .padding(.bottom, 4)
+    }
 
     private var inputBar: some View {
         HStack(spacing: 8) {
@@ -105,7 +159,39 @@ struct SessionChatView: View {
                 .clipShape(.rect(cornerRadius: 8))
                 .focused($isInputFocused)
                 .onSubmit {
-                    sendMessage()
+                    if showCommandCompletion && !filteredCommands.isEmpty {
+                        selectCommand(filteredCommands[selectedCommandIndex])
+                    } else {
+                        sendMessage()
+                    }
+                }
+                .onKeyPress(.upArrow) {
+                    if showCommandCompletion {
+                        selectedCommandIndex = max(0, selectedCommandIndex - 1)
+                        return .handled
+                    }
+                    return .ignored
+                }
+                .onKeyPress(.downArrow) {
+                    if showCommandCompletion {
+                        selectedCommandIndex = min(filteredCommands.count - 1, selectedCommandIndex + 1)
+                        return .handled
+                    }
+                    return .ignored
+                }
+                .onKeyPress(.tab) {
+                    if showCommandCompletion && !filteredCommands.isEmpty {
+                        selectCommand(filteredCommands[selectedCommandIndex])
+                        return .handled
+                    }
+                    return .ignored
+                }
+                .onKeyPress(.escape) {
+                    if showCommandCompletion {
+                        showCommandCompletion = false
+                        return .handled
+                    }
+                    return .ignored
                 }
                 .disabled(session.phase == .disconnected)
 
@@ -143,12 +229,12 @@ struct SessionChatView: View {
         if !session.isLive && session.isLikelyThinking {
             return .blue
         }
-        
+
         // Check for externally active sessions
         if !session.isLive && session.isLikelyExternallyActive {
             return .yellow
         }
-        
+
         switch session.phase {
         case .disconnected: return .gray
         case .starting: return .orange
@@ -159,38 +245,52 @@ struct SessionChatView: View {
         }
     }
 
+    private func selectCommand(_ command: SlashCommandInfo) {
+        // Insert command with leading slash
+        // Command names from Pi don't have leading slash, so we add it
+        inputText = "/" + command.name + " "
+        showCommandCompletion = false
+    }
+
     private func sendMessage() {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
 
         inputText = ""
-
-        let command = SlashCommand.parse(text)
+        showCommandCompletion = false
 
         Task {
-            switch command {
-            case .prompt(let msg):
-                await session.sendPrompt(msg)
-            default:
-                if let result = await session.executeCommand(command) {
-                    // Display command result as a system message
-                    displayLocalMessage(result)
-                }
-            }
+            // All messages go through sendPrompt (Pi handles slash commands internally)
+            await session.sendPrompt(text)
         }
     }
+}
 
-    /// Display a local system message (not sent to Pi)
-    private func displayLocalMessage(_ text: String) {
-        let message = RPCMessage(
-            id: UUID().uuidString,
-            role: .assistant,
-            content: text,
-            timestamp: Date()
-        )
-        var updatedMessages = session.messages
-        updatedMessages.append(message)
-        session.messages = updatedMessages
+// MARK: - Command Completion Row
+
+private struct CommandCompletionRow: View {
+    let command: SlashCommandInfo
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text("/" + command.displayName)
+                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .foregroundStyle(.white)
+
+            if let desc = command.description {
+                Text(desc)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.5))
+                    .lineLimit(1)
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(isSelected ? Color.blue.opacity(0.3) : Color.clear)
+        .clipShape(.rect(cornerRadius: 4))
     }
 }
 

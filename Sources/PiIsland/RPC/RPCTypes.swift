@@ -103,7 +103,7 @@ enum RPCCommand: Encodable {
     private enum CodingKeys: String, CodingKey {
         case type, message, images, streamingBehavior
         case provider, modelId, level, customInstructions
-        case enabled, parentSession, sessionPath, command
+        case enabled, parentSession, sessionPath, command, args
     }
 }
 
@@ -385,4 +385,19 @@ enum RPCToolStatus: String, Sendable {
     case running
     case success
     case error
+}
+
+// MARK: - Slash Command Info
+
+struct SlashCommandInfo: Identifiable, Sendable {
+    let name: String
+    let description: String?
+    let usage: String?
+
+    var id: String { name }
+
+    /// Display name without leading slash
+    var displayName: String {
+        name.hasPrefix("/") ? String(name.dropFirst()) : name
+    }
 }

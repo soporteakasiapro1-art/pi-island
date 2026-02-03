@@ -249,6 +249,30 @@ actor PiRPCClient {
         try await send(.getSessionStats)
     }
 
+    /// Get available commands (for completion)
+    func getCommands() async throws -> [SlashCommandInfo] {
+        logger.info("Sending get_commands RPC...")
+        let response = try await sendAndWait(.getCommands, commandName: "get_commands")
+        logger.info("get_commands response: success=\(response.success ?? false), hasData=\(response.data != nil)")
+        if let data = response.data?.dictValue {
+            logger.info("get_commands data keys: \(data.keys.joined(separator: ", "))")
+            if let commandsArray = data["commands"] as? [[String: Any]] {
+                logger.info("Found \(commandsArray.count) commands in response")
+                return commandsArray.compactMap { dict -> SlashCommandInfo? in
+                    guard let name = dict["name"] as? String else { return nil }
+                    let description = dict["description"] as? String
+                    let usage = dict["usage"] as? String
+                    return SlashCommandInfo(name: name, description: description, usage: usage)
+                }
+            } else {
+                logger.warning("No 'commands' array in response data")
+            }
+        } else {
+            logger.warning("get_commands response has no data dict")
+        }
+        return []
+    }
+
     // MARK: - Private
 
     private func send(_ command: RPCCommand) async throws {
@@ -286,22 +310,28 @@ actor PiRPCClient {
             throw RPCError.encodingFailed
         }
 
+        logger.debug("sendAndWait: sending \(commandName)")
+
+        // Send the command first
+        try stdinPipe.fileHandleForWriting.write(contentsOf: lineData)
+        logger.debug("sendAndWait: sent \(commandName), waiting for response")
+
+        // Register that we're waiting for this command
         pendingRequests[commandName] = true
 
-        do {
-            try stdinPipe.fileHandleForWriting.write(contentsOf: lineData)
-        } catch {
-            throw error
-        }
-
-        // Wait for response with timeout
+        // Poll for response (allows other events to be processed)
         let startTime = ContinuousClock.now
         while ContinuousClock.now - startTime < timeout {
-            try await Task.sleep(for: .milliseconds(50))
+            // Check if response arrived
             if let response = pendingResponses.removeValue(forKey: commandName) {
+                pendingRequests.removeValue(forKey: commandName)
                 return response
             }
+            // Yield to allow handleStdout to run
+            try await Task.sleep(for: .milliseconds(10))
         }
+
+        pendingRequests.removeValue(forKey: commandName)
         throw RPCError.commandFailed("Timeout waiting for \(commandName)")
     }
 
@@ -320,14 +350,15 @@ actor PiRPCClient {
                 await processEvent(event)
             } catch {
                 if let text = String(data: lineData, encoding: .utf8) {
-                    logger.warning("Failed to parse: \(text)")
+                    logger.warning("Failed to parse event: \(error.localizedDescription)")
+                    logger.warning("Raw JSON: \(text.prefix(200))")
                 }
             }
         }
     }
 
     private func processEvent(_ event: RPCEvent) async {
-        logger.info("Event received: type=\(event.type), command=\(event.command ?? "nil")")
+        logger.info("Event: type=\(event.type), command=\(event.command ?? "nil"), hasMessageEvent=\(event.assistantMessageEvent != nil)")
 
         // Forward raw event
         if let callback = onEvent {
@@ -340,11 +371,13 @@ actor PiRPCClient {
             await handleResponse(event)
 
         case "agent_start":
+            logger.info("agent_start received")
             if let callback = onAgentStart {
                 await MainActor.run { callback() }
             }
 
         case "agent_end":
+            logger.info("agent_end received")
             if let callback = onAgentEnd, let messages = event.messages {
                 await MainActor.run { callback(messages) }
             }
@@ -359,11 +392,15 @@ actor PiRPCClient {
             if let callback = onMessageUpdate,
                let message = event.message,
                let delta = event.assistantMessageEvent {
+                logger.info("message_update: calling callback with message and delta, deltaType=\(delta.type)")
                 await MainActor.run { callback(message, delta) }
             } else if let callback = onMessageUpdate,
                       let delta = event.assistantMessageEvent {
                 // Some events don't have message, just delta
+                logger.info("message_update: calling callback with delta only, deltaType=\(delta.type)")
                 await MainActor.run { callback(AnyCodable([:]), delta) }
+            } else {
+                logger.warning("message_update: no callback or missing delta")
             }
 
         case "message_end":
@@ -408,13 +445,12 @@ actor PiRPCClient {
 
     private func handleResponse(_ event: RPCEvent) async {
         guard let command = event.command else { return }
-        print("[handleResponse] command=\(command)")
+        logger.debug("[handleResponse] command=\(command)")
 
         // Store response for polling-based waiting
-        if pendingRequests.keys.contains(command) {
-            print("[handleResponse] Storing response for \(command)")
+        if pendingRequests[command] == true {
+            logger.debug("[handleResponse] Storing response for \(command)")
             pendingResponses[command] = event
-            pendingRequests.removeValue(forKey: command)
         }
 
         if event.success == false, let error = event.error {
