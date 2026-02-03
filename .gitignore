@@ -22,3 +22,6 @@ dist/
 
 # Debug logs
 .pi-island-debug.log
+
+# Obsidian
+vault/.obsidian/

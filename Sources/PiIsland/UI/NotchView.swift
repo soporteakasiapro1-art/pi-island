@@ -19,6 +19,7 @@ struct NotchView: View {
     @ObservedObject var viewModel: NotchViewModel
     @State private var isVisible: Bool = false
     @State private var isHovering: Bool = false
+    @State private var shouldBounceLogo: Bool = false
 
     // MARK: - Sizing
     
@@ -142,6 +143,11 @@ struct NotchView: View {
             if !viewModel.hasPhysicalNotch {
                 isVisible = true
             }
+            
+            // Set up bounce animation callback
+            viewModel.onAgentCompletedForBounce = { [self] in
+                triggerBounceAnimation()
+            }
         }
         .onChange(of: viewModel.status) { oldStatus, newStatus in
             handleStatusChange(from: oldStatus, to: newStatus)
@@ -211,6 +217,7 @@ struct NotchView: View {
                     size: 14,
                     isAnimating: activityState.shouldAnimate,
                     isPulsing: isHintState,
+                    bounce: shouldBounceLogo,
                     color: activityColor(for: activityState)
                 )
             }
@@ -348,6 +355,19 @@ struct NotchView: View {
     private func handleSessionsChange(_ sessions: [ManagedSession]) {
         if sessions.contains(where: { $0.phase == .thinking || $0.phase == .executing }) {
             isVisible = true
+        }
+    }
+
+    private func triggerBounceAnimation() {
+        // Ensure visibility so user can see the bounce
+        isVisible = true
+        
+        // Trigger bounce
+        shouldBounceLogo = true
+        
+        // Reset after animation completes
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            shouldBounceLogo = false
         }
     }
 }

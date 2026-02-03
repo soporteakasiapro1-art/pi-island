@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Documentation vault for lithos-based static site generation
 - CHANGELOG.md following keepachangelog format
+- Pi icon bounce animation when agent completes a response
 
 ## [0.2.0] - 2026-02-01
 

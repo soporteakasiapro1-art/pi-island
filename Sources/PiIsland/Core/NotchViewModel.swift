@@ -114,6 +114,9 @@ class NotchViewModel: ObservableObject {
     /// Session that has an unread response
     private(set) var unreadSession: ManagedSession?
 
+    /// Callback for when agent completes - used to trigger bounce animation
+    var onAgentCompletedForBounce: (() -> Void)?
+
     // MARK: - Initialization
 
     init(geometry: NotchGeometry, hasPhysicalNotch: Bool, sessionManager: SessionManager) {
@@ -134,6 +137,8 @@ class NotchViewModel: ObservableObject {
         sessionManager.onAgentCompleted = { [weak self] session in
             guard let self = self else { return }
             self.handleSessionActivity(session)
+            // Trigger bounce animation in the view
+            self.onAgentCompletedForBounce?()
         }
 
         sessionManager.onExternalSessionUpdated = { [weak self] session in

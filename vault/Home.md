@@ -32,6 +32,7 @@ Pi Island uses the MacBook's notch area as its home. The interface:
 - **Closed state**: Sits invisibly in the notch
 - **Hint state**: Pulses when there's activity in a session
 - **Open state**: Expands to show sessions list or chat view
+- **Bounce animation**: Pi logo bounces when a response is ready
 
 ### Session Management
 

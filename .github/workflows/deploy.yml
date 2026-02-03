@@ -28,6 +28,7 @@ jobs:
         with:
           repository: jwintz/lithos
           path: lithos
+          submodules: recursive
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -40,14 +41,21 @@ jobs:
         run: npm ci
         working-directory: lithos
 
-      - name: Build documentation site
-        run: npm run generate -- --vault ../pi-island/vault --output ../pi-island/dist
+      - name: Clean build cache
+        run: rm -rf .nuxt .output
         working-directory: lithos
+
+      - name: Build documentation site
+        run: npm run generate -- --vault ../pi-island/vault
+        working-directory: lithos
+        env:
+          NUXT_APP_BASE_URL: /pi-island/
+          NODE_OPTIONS: "--max-old-space-size=8192"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: pi-island/dist
+          path: lithos/.output/public
 
   deploy:
     needs: build
