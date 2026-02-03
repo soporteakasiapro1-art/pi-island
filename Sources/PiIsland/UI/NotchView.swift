@@ -215,7 +215,6 @@ struct NotchView: View {
                 )
             }
             .frame(width: viewModel.status == .opened ? nil : sideWidth)
-            .padding(.leading, viewModel.status == .opened ? 8 : 0)
 
             // Center content
             if viewModel.status == .opened {
@@ -603,10 +602,16 @@ struct SessionsListView: View {
                             .padding(.top, 8)
 
                         ForEach(sessionManager.historicalSessions.prefix(5)) { session in
-                            SessionRowView(session: session, isSelected: false)
-                                .onTapGesture {
-                                    resumeHistoricalSession(session)
+                            SessionRowView(
+                                session: session,
+                                isSelected: false,
+                                onDelete: {
+                                    deleteSession(session)
                                 }
+                            )
+                            .onTapGesture {
+                                resumeHistoricalSession(session)
+                            }
                         }
                     }
                 }
@@ -637,6 +642,16 @@ struct SessionsListView: View {
             // print("[DEBUG] Resume complete: \(resumed?.projectName ?? "nil"), messages: \(resumed?.messages.count ?? 0)")
         }
     }
+
+    private func deleteSession(_ session: ManagedSession) {
+        Task {
+            do {
+                try await sessionManager.deleteSession(session.id)
+            } catch {
+                // Error already logged in SessionManager
+            }
+        }
+    }
 }
 
 // MARK: - Session Row View
@@ -644,6 +659,7 @@ struct SessionsListView: View {
 struct SessionRowView: View {
     @Bindable var session: ManagedSession
     let isSelected: Bool
+    var onDelete: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 12) { // Increased spacing
@@ -670,6 +686,16 @@ struct SessionRowView: View {
             }
 
             Spacer()
+
+            // Delete button for historical sessions
+            if !session.isLive, let onDelete {
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.red.opacity(0.6))
+                }
+                .buttonStyle(.plain)
+            }
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 11)) // Increased from 10

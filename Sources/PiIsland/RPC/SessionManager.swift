@@ -175,6 +175,38 @@ class SessionManager {
         logger.info("Removed session \(id)")
     }
 
+    /// Delete a session completely (including its JSONL file)
+    func deleteSession(_ id: String) async throws {
+        guard let session = sessions[id] else { return }
+
+        // Stop if live
+        if session.isLive {
+            await session.stop()
+        }
+
+        // Delete the session file
+        if let sessionFile = session.sessionFile {
+            do {
+                try FileManager.default.removeItem(atPath: sessionFile)
+                logger.info("Deleted session file: \(sessionFile)")
+            } catch {
+                logger.error("Failed to delete session file: \(error.localizedDescription)")
+                throw error
+            }
+            sessionFileIndex.removeValue(forKey: sessionFile)
+        }
+
+        // Remove from sessions dictionary
+        sessions.removeValue(forKey: id)
+
+        // Update selection if needed
+        if selectedSessionId == id {
+            selectedSessionId = liveSessions.first?.id
+        }
+
+        logger.info("Deleted session \(id)")
+    }
+
     /// Resume a historical session by starting a new RPC process with the session file
     /// This method returns quickly with a session that has messages loaded.
     /// The RPC connection happens in the background.
@@ -804,6 +836,68 @@ class ManagedSession: Identifiable, Equatable {
             try await client.getState()
         } catch {
             logger.error("Failed to cycle thinking level: \(error.localizedDescription)")
+        }
+    }
+
+    func setThinkingLevel(_ level: ThinkingLevel) async {
+        guard isLive, let client = rpcClient else { return }
+        do {
+            try await client.setThinkingLevel(level)
+            try await Task.sleep(for: .milliseconds(100))
+            try await client.getState()
+        } catch {
+            logger.error("Failed to set thinking level: \(error.localizedDescription)")
+        }
+    }
+
+    func compact() async {
+        guard isLive, let client = rpcClient else { return }
+        do {
+            try await client.compact()
+        } catch {
+            logger.error("Failed to compact: \(error.localizedDescription)")
+        }
+    }
+
+    /// Execute a slash command, returning a message to display (if any)
+    func executeCommand(_ command: SlashCommand) async -> String? {
+        switch command {
+        case .help:
+            return SlashCommand.helpText
+
+        case .model(let filter):
+            if let filter = filter {
+                // Find and switch to matching model
+                let lowered = filter.lowercased()
+                if let match = availableModels.first(where: {
+                    $0.id.lowercased().contains(lowered) ||
+                    ($0.name?.lowercased().contains(lowered) ?? false)
+                }) {
+                    await setModel(provider: match.provider, modelId: match.id)
+                    return "Switched to \(match.displayName)"
+                } else {
+                    return "No model matching '\(filter)' found"
+                }
+            } else {
+                await cycleModel()
+                return nil
+            }
+
+        case .thinking(let level):
+            if let level = level {
+                await setThinkingLevel(level)
+                return "Thinking level: \(level.rawValue)"
+            } else {
+                await cycleThinkingLevel()
+                return "Thinking level: \(thinkingLevel.rawValue)"
+            }
+
+        case .compact:
+            await compact()
+            return "Context compacted"
+
+        case .prompt:
+            return nil
         }
     }
 

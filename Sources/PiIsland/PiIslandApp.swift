@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AppKit
+import Combine
 import OSLog
 
 private let logger = Logger(subsystem: "com.pi-island", category: "App")
@@ -30,6 +31,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var windowController: NotchWindowController?
     var statusBarController: StatusBarController?
     var sessionManager: SessionManager?
+    var displayMonitor: DisplayMonitor?
+    private var cancellables = Set<AnyCancellable>()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Re-apply activation policy (SwiftUI may have overridden it)
@@ -39,8 +42,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Create session manager
         sessionManager = SessionManager()
 
+        // Create display monitor
+        displayMonitor = DisplayMonitor()
+
         // Get the screen with the notch (or main screen)
-        guard let screen = NSScreen.builtin ?? NSScreen.main else {
+        guard let screen = displayMonitor?.targetScreen ?? NSScreen.builtin ?? NSScreen.main else {
             logger.error("No screen found")
             return
         }
@@ -48,6 +54,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Create window controller
         windowController = NotchWindowController(screen: screen, sessionManager: sessionManager!)
         windowController?.showWindow(nil)
+
+        // Subscribe to display changes
+        displayMonitor?.$targetScreen
+            .dropFirst() // Skip initial value
+            .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newScreen in
+                self?.windowController?.updateForScreen(newScreen)
+            }
+            .store(in: &cancellables)
 
         // Create status bar
         statusBarController = StatusBarController(sessionManager: sessionManager!)
@@ -63,6 +79,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         sessionManager?.stopWatching()
+        displayMonitor?.removeObserver()
 
         Task {
             if let manager = sessionManager {

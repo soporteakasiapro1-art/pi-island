@@ -11,38 +11,14 @@ import SwiftUI
 
 class NotchWindowController: NSWindowController {
     let viewModel: NotchViewModel
-    private let screen: NSScreen
+    private var currentScreen: NSScreen
     private var cancellables = Set<AnyCancellable>()
 
     init(screen: NSScreen, sessionManager: SessionManager) {
-        self.screen = screen
+        self.currentScreen = screen
 
-        let screenFrame = screen.frame
-        let notchSize = screen.notchSize
-
-        // Window covers full width at top, tall enough for largest content
-        let windowHeight: CGFloat = 600
-        let windowFrame = NSRect(
-            x: screenFrame.origin.x,
-            y: screenFrame.maxY - windowHeight,
-            width: screenFrame.width,
-            height: windowHeight
-        )
-
-        // Device notch rect - positioned at center
-        let deviceNotchRect = CGRect(
-            x: (screenFrame.width - notchSize.width) / 2,
-            y: 0,
-            width: notchSize.width,
-            height: notchSize.height
-        )
-
-        // Create geometry
-        let geometry = NotchGeometry(
-            deviceNotchRect: deviceNotchRect,
-            screenRect: screenFrame,
-            windowHeight: windowHeight
-        )
+        let geometry = Self.createGeometry(for: screen)
+        let windowFrame = Self.createWindowFrame(for: screen)
 
         // Create view model
         self.viewModel = NotchViewModel(
@@ -91,6 +67,57 @@ class NotchWindowController: NSWindowController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             self?.viewModel.performBootAnimation()
         }
+    }
+
+    // MARK: - Screen Updates
+
+    /// Update the window and view model for a new screen
+    func updateForScreen(_ newScreen: NSScreen) {
+        guard newScreen != currentScreen else { return }
+        currentScreen = newScreen
+
+        let geometry = Self.createGeometry(for: newScreen)
+        let windowFrame = Self.createWindowFrame(for: newScreen)
+
+        // Update view model geometry
+        viewModel.updateGeometry(geometry, hasPhysicalNotch: newScreen.hasPhysicalNotch)
+
+        // Reposition window
+        window?.setFrame(windowFrame, display: true)
+    }
+
+    // MARK: - Geometry Helpers
+
+    private static func createGeometry(for screen: NSScreen) -> NotchGeometry {
+        let screenFrame = screen.frame
+        let notchSize = screen.notchSize
+        let windowHeight: CGFloat = 600
+
+        // Device notch rect - positioned at center
+        let deviceNotchRect = CGRect(
+            x: (screenFrame.width - notchSize.width) / 2,
+            y: 0,
+            width: notchSize.width,
+            height: notchSize.height
+        )
+
+        return NotchGeometry(
+            deviceNotchRect: deviceNotchRect,
+            screenRect: screenFrame,
+            windowHeight: windowHeight
+        )
+    }
+
+    private static func createWindowFrame(for screen: NSScreen) -> NSRect {
+        let screenFrame = screen.frame
+        let windowHeight: CGFloat = 600
+
+        return NSRect(
+            x: screenFrame.origin.x,
+            y: screenFrame.maxY - windowHeight,
+            width: screenFrame.width,
+            height: windowHeight
+        )
     }
 
     required init?(coder: NSCoder) {

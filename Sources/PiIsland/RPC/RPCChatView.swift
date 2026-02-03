@@ -164,9 +164,33 @@ struct SessionChatView: View {
         guard !text.isEmpty else { return }
 
         inputText = ""
+
+        let command = SlashCommand.parse(text)
+
         Task {
-            await session.sendPrompt(text)
+            switch command {
+            case .prompt(let msg):
+                await session.sendPrompt(msg)
+            default:
+                if let result = await session.executeCommand(command) {
+                    // Display command result as a system message
+                    displayLocalMessage(result)
+                }
+            }
         }
+    }
+
+    /// Display a local system message (not sent to Pi)
+    private func displayLocalMessage(_ text: String) {
+        let message = RPCMessage(
+            id: UUID().uuidString,
+            role: .assistant,
+            content: text,
+            timestamp: Date()
+        )
+        var updatedMessages = session.messages
+        updatedMessages.append(message)
+        session.messages = updatedMessages
     }
 }
 

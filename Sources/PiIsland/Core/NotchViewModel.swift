@@ -56,8 +56,8 @@ class NotchViewModel: ObservableObject {
 
     // MARK: - Geometry
 
-    let geometry: NotchGeometry
-    let hasPhysicalNotch: Bool
+    private(set) var geometry: NotchGeometry
+    private(set) var hasPhysicalNotch: Bool
 
     var deviceNotchRect: CGRect { geometry.deviceNotchRect }
     var screenRect: CGRect { geometry.screenRect }
@@ -122,6 +122,12 @@ class NotchViewModel: ObservableObject {
         self.sessionManager = sessionManager
         setupEventHandlers()
         setupAgentCompletionHandler()
+    }
+
+    /// Update geometry when screen changes (external display handling)
+    func updateGeometry(_ newGeometry: NotchGeometry, hasPhysicalNotch: Bool) {
+        self.geometry = newGeometry
+        self.hasPhysicalNotch = hasPhysicalNotch
     }
 
     private func setupAgentCompletionHandler() {
