@@ -60,7 +60,7 @@ struct SettingsView: View {
             
             // Version info
             HStack {
-                Text("Pi Island v0.1.0")
+                Text("Pi Island v0.3.0")
                     .font(.system(size: 10))
                     .foregroundStyle(.white.opacity(0.4))
             }

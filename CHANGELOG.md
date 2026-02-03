@@ -7,10 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-02-03
+
 ### Added
-- Documentation vault for lithos-based static site generation
-- CHANGELOG.md following keepachangelog format
 - Pi icon bounce animation when agent completes a response
+- Automatic update checker via GitHub releases API
+- Monospaced font theme for chat messages
+- Slash command completion with keyboard navigation
+- File reference completion (@file syntax)
+- Session search/filter in sessions list
+- Token count and cost display in chat header
+- New session button with folder picker
+- Session delete button for historical sessions
+- External display support (notch moves when lid closes)
+- Documentation site via Lithos static generator
+
+### Changed
+- Improved dot indicator alignment in message views
+- Cleaner landing page with icon-based feature cards
+
+### Fixed
+- Bounce animation now uses scale effect instead of translation
+- Navigation structure for documentation vault
 
 ## [0.2.0] - 2026-02-01
 
@@ -70,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Non-activating floating panel behavior
 - Production .app bundle creation script with signing and DMG
 
-[Unreleased]: https://github.com/jwintz/pi-island/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/jwintz/pi-island/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/jwintz/pi-island/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/jwintz/pi-island/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jwintz/pi-island/releases/tag/v0.1.0

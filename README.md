@@ -96,19 +96,19 @@ Build and sign:
 ./scripts/bundle.sh --sign-id "Developer ID Application: Julien Wintz (TEAM_ID)" --dmg
 ```
 
-This creates `Pi-Island-0.1.0.dmg`. To completely remove the "Apple could not verify..." warning for other users, you must notarize the DMG:
+This creates `Pi-Island-0.3.0.dmg`. To completely remove the "Apple could not verify..." warning for other users, you must notarize the DMG:
 
 ```bash
 export APPLE_ID="your@email.com"
 export APPLE_PASSWORD="app-specific-password"
 export APPLE_TEAM_ID="YOUR_TEAM_ID"
 
-./scripts/notarize.sh Pi-Island-0.1.0.dmg
+./scripts/notarize.sh Pi-Island-0.3.0.dmg
 ```
 
 You can verify the result with:
 ```bash
-spctl -a -vv -t install "Pi-Island-0.1.0.dmg"
+spctl -a -vv -t install "Pi-Island-0.3.0.dmg"
 ```
 
 **Note:** Without a Developer ID certificate and notarization, recipients may see a "damaged" error or a security warning. They can bypass this by right-clicking the app and selecting **Open**, or by running:
@@ -119,7 +119,7 @@ xattr -cr "/Applications/Pi Island.app"
 ### Installation
 
 From DMG:
-1. Open `Pi-Island-0.1.0.dmg`
+1. Open `Pi-Island-0.3.0.dmg`
 2. Drag `Pi Island` to the `Applications` folder
 
 Or manually:

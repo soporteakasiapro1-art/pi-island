@@ -16,7 +16,7 @@ set -e
 APP_NAME="Pi Island"
 BUNDLE_ID="me.jwintz.pi-island"
 EXECUTABLE="PiIsland"
-VERSION="0.1.0"
+VERSION="0.3.0"
 
 # Parse arguments
 CREATE_DMG=false

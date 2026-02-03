@@ -7,7 +7,7 @@
 #   export APPLE_ID="your@email.com"
 #   export APPLE_PASSWORD="app-specific-password"
 #   export APPLE_TEAM_ID="TEAM_ID"
-#   ./scripts/notarize.sh Pi-Island-0.1.0.dmg
+#   ./scripts/notarize.sh Pi-Island-0.3.0.dmg
 #
 
 set -e

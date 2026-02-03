@@ -74,6 +74,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             sessionManager?.startWatching()
         }
 
+        // Check for updates
+        Task {
+            await UpdateChecker.shared.checkForUpdates()
+        }
+
         logger.info("Pi Island started")
     }
 
