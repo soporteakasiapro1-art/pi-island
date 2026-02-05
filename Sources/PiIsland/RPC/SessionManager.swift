@@ -753,26 +753,35 @@ class ManagedSession: Identifiable, Equatable {
 
             // If resuming, switch to the session and load messages
             if let sessionPath = resumeSessionFile {
-                try await rpcClient?.switchSession(sessionPath: sessionPath)
+                do {
+                    try await rpcClient?.switchSession(sessionPath: sessionPath)
 
-                if let messagesResponse = try await rpcClient?.getMessages() {
-                    if let data = messagesResponse.data?.dictValue,
-                       let messagesArray = data["messages"] as? [Any] {
-                        let rawMessages = messagesArray.map { AnyCodable($0) }
-                        handleMessagesLoaded(rawMessages)
+                    if let messagesResponse = try await rpcClient?.getMessages() {
+                        if let data = messagesResponse.data?.dictValue,
+                           let messagesArray = data["messages"] as? [Any] {
+                            let rawMessages = messagesArray.map { AnyCodable($0) }
+                            handleMessagesLoaded(rawMessages)
+                        }
                     }
+                    self.sessionFile = sessionPath
+                } catch {
+                    // Non-fatal: session switch failed but RPC is running
+                    logger.warning("Session switch failed: \(error.localizedDescription)")
                 }
-                self.sessionFile = sessionPath
             } else {
                 // New session - create it and capture the session file
                 logger.info("Creating new session...")
                 try await rpcClient?.newSession()
             }
 
-            // Get state to capture model, thinking level, etc.
-            try await rpcClient?.getState()
+            // Get state to capture model, thinking level, etc. (non-fatal if fails)
+            do {
+                try await rpcClient?.getState()
+            } catch {
+                logger.warning("Failed to get initial state: \(error.localizedDescription)")
+            }
 
-            // Fetch available models and commands
+            // Fetch available models and commands (non-fatal)
             await fetchAvailableModels()
             await fetchAvailableCommands()
 
@@ -921,10 +930,12 @@ class ManagedSession: Identifiable, Equatable {
             onAgentStart: { [weak self] in
                 self?.phase = .thinking
                 self?.isStreaming = true
+                self?.lastError = nil  // Clear any previous error
             },
             onAgentEnd: { [weak self] _ in
                 self?.phase = .idle
                 self?.isStreaming = false
+                self?.lastError = nil  // Clear any previous error
                 self?.finalizeStreamingMessage()
                 // Notify for visual hint
                 self?.onAgentCompleted?()

@@ -18,7 +18,6 @@ class UpdateChecker {
     
     private let repoOwner = "jwintz"
     private let repoName = "pi-island"
-    private let currentVersion = "0.3.0"
     
     var updateAvailable: Bool = false
     var latestVersion: String?
@@ -45,7 +44,7 @@ class UpdateChecker {
         
         var request = URLRequest(url: url)
         request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
-        request.setValue("Pi-Island/\(currentVersion)", forHTTPHeaderField: "User-Agent")
+        request.setValue("Pi-Island/\(AppVersion.current)", forHTTPHeaderField: "User-Agent")
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -67,12 +66,12 @@ class UpdateChecker {
             releaseNotes = release.body
             
             // Compare versions
-            updateAvailable = isNewerVersion(tagVersion, than: currentVersion)
+            updateAvailable = isNewerVersion(tagVersion, than: AppVersion.current)
             
             if updateAvailable {
-                logger.info("Update available: \(tagVersion) (current: \(self.currentVersion))")
+                logger.info("Update available: \(tagVersion) (current: \(AppVersion.current))")
             } else {
-                logger.debug("No update available (latest: \(tagVersion), current: \(self.currentVersion))")
+                logger.debug("No update available (latest: \(tagVersion), current: \(AppVersion.current))")
             }
             
         } catch {

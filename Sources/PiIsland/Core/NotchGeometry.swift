@@ -62,4 +62,9 @@ struct NotchGeometry: Sendable {
     func isPointOutsidePanel(_ point: CGPoint, size: CGSize) -> Bool {
         !openedScreenRect(for: size).contains(point)
     }
+
+    /// The opened panel frame in screen coordinates (for tracking region)
+    func openedPanelFrame(for size: CGSize) -> CGRect {
+        openedScreenRect(for: size)
+    }
 }

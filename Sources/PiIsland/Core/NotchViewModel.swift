@@ -27,12 +27,14 @@ enum NotchContentType: Equatable {
     case sessions
     case chat(ManagedSession)
     case settings
+    case usage
 
     var id: String {
         switch self {
         case .sessions: return "sessions"
         case .chat(let session): return "chat-\(session.id)"
         case .settings: return "settings"
+        case .usage: return "usage"
         }
     }
 
@@ -81,6 +83,11 @@ class NotchViewModel: ObservableObject {
                 width: min(screenRect.width * 0.35, 320),
                 height: 240
             )
+        case .usage:
+            return CGSize(
+                width: min(screenRect.width * 0.4, 420),
+                height: 400
+            )
         }
     }
 
@@ -125,12 +132,25 @@ class NotchViewModel: ObservableObject {
         self.sessionManager = sessionManager
         setupEventHandlers()
         setupAgentCompletionHandler()
+        updateTrackingState()
     }
 
     /// Update geometry when screen changes (external display handling)
     func updateGeometry(_ newGeometry: NotchGeometry, hasPhysicalNotch: Bool) {
         self.geometry = newGeometry
         self.hasPhysicalNotch = hasPhysicalNotch
+        updateTrackingState()
+    }
+
+    /// Update the mouse tracking region for battery efficiency
+    private func updateTrackingState() {
+        // Set whether detailed tracking is needed
+        events.needsDetailedTracking = (status == .opened || status == .hint)
+
+        // Update the tracking region
+        let notchFrame = geometry.notchScreenRect
+        let openedFrame = status == .opened ? geometry.openedPanelFrame(for: openedSize) : nil
+        events.updateTrackingRegion(notchFrame: notchFrame, openedFrame: openedFrame)
     }
 
     private func setupAgentCompletionHandler() {
@@ -196,9 +216,13 @@ class NotchViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    private var isInChatMode: Bool {
-        if case .chat = contentType { return true }
-        return false
+    private var isInDetailMode: Bool {
+        switch contentType {
+        case .chat, .usage, .settings:
+            return true
+        case .sessions:
+            return false
+        }
     }
 
     private func handleMouseMove(_ location: CGPoint) {
@@ -237,7 +261,7 @@ class NotchViewModel: ObservableObject {
                 notchClose()
                 repostClickAt(location)
             } else if geometry.notchScreenRect.contains(location) {
-                if !isInChatMode {
+                if !isInDetailMode {
                     notchClose()
                 }
             }
@@ -290,6 +314,9 @@ class NotchViewModel: ObservableObject {
         openReason = reason
         status = .opened
 
+        // Update tracking state for battery efficiency
+        updateTrackingState()
+
         // Restore chat session if we had one
         if reason != .notification, let chatSession = currentChatSession {
             if case .chat(let current) = contentType, current.id == chatSession.id {
@@ -306,6 +333,9 @@ class NotchViewModel: ObservableObject {
         }
         status = .closed
         contentType = .sessions
+
+        // Update tracking state for battery efficiency
+        updateTrackingState()
     }
 
     /// Show a subtle hint that there's an unread response
@@ -367,6 +397,14 @@ class NotchViewModel: ObservableObject {
     }
 
     func exitSettings() {
+        contentType = .sessions
+    }
+
+    func showUsage() {
+        contentType = .usage
+    }
+
+    func exitUsage() {
         contentType = .sessions
     }
 

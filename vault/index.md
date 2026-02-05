@@ -31,13 +31,8 @@ spotlight: true
 class: col-span-3
 to: /guide/usage
 ---
-::::noir-image
----
-src: /_raw/Assets/Landing-2.png
-alt: Pi Island dynamic island interface
-height: 320px
----
-::::
+
+![Pi Island dynamic island interface](/_raw/Assets/Landing-2.png){.w-full .rounded-lg}
 
 #title
 Dynamic Island for Pi

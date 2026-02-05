@@ -1,13 +1,22 @@
-# Changelog
+---
+title: Changelog
+description: Release history and notable changes to Pi Island
+navigation:
+  icon: i-lucide-history
+order: 99
+---
 
-All notable changes to this project will be documented in this file.
+All notable changes to Pi Island are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+:changelog-versions{:versions='[{"title":"Unreleased","description":""},{"title":"v0.4.0","date":"2026-02-05","description":"Usage Monitor with multi-provider support, battery optimizations","to":"https://github.com/jwintz/pi-island/releases/tag/v0.4.0"},{"title":"v0.3.0","date":"2026-02-03","description":"Bounce animation, update checker, slash commands, file references","to":"https://github.com/jwintz/pi-island/releases/tag/v0.3.0"},{"title":"v0.2.0","date":"2026-02-01","description":"Real-time session updates, terminal Pi detection","to":"https://github.com/jwintz/pi-island/releases/tag/v0.2.0"},{"title":"v0.1.0","date":"2026-01-31","description":"Initial release with RPC client, multi-session support, notch UI","to":"https://github.com/jwintz/pi-island/releases/tag/v0.1.0"}]'}
 
-## [Unreleased]
+---
 
-## [0.4.0] - 2026-02-05
+## Unreleased
+
+---
+
+## v0.4.0 - 2026-02-05
 
 ### Added
 - AI Usage Monitor with support for multiple providers:
@@ -24,15 +33,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Notifications for warning (80%) and critical (95%) usage thresholds
 - Automatic refresh with configurable intervals (only when usage view is displayed)
-- Shell environment resolution for Finder launches (captures env vars from login shell)
-- Usage monitor documentation in vault
+- Shell environment resolution for Finder launches
 
 ### Changed
 - Move usage display from menu bar to notch interface
 - Simplify status bar menu to only show Quit option
-- Rename "Sessions" header to "Session Monitor"
-- Rename "AI Usage" header to "Usage Monitor"
-- Version display now uses centralized AppVersion (hardcoded fallback for debug builds)
+- Rename headers to "Session Monitor" and "Usage Monitor"
+- Version display uses centralized AppVersion
 - Bundle script reads version from git tag
 
 ### Fixed
@@ -41,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session error indicator no longer persists after recovery
 - Non-fatal errors during session resume no longer block the session
 
-## [0.3.0] - 2026-02-03
+## v0.3.0 - 2026-02-03
 
 ### Added
 - Pi icon bounce animation when agent completes a response
@@ -64,7 +71,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bounce animation now uses scale effect instead of translation
 - Navigation structure for documentation vault
 
-## [0.2.0] - 2026-02-01
+---
+
+## v0.2.0 - 2026-02-01
 
 ### Added
 - Real-time session updates via FSEvents file watching
@@ -88,42 +97,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - External updates being skipped for idle live sessions
 - View not re-rendering when file modification dates change
 
-## [0.1.0] - 2026-01-31
+---
+
+## v0.1.0 - 2026-01-31
+
+Initial release of Pi Island.
 
 ### Added
 - Core architecture with RPC client (PiRPCClient actor)
 - Multi-session support (SessionManager + ManagedSession)
 - Historical session loading from ~/.pi/agent/sessions/ JSONL
-- Session resume via RPC commands (switch_session + get_messages)
-- NotchGeometry, NotchShape with proper corner radii
-- NotchViewModel with mouse tracking via Combine
-- NotchWindowController - full-width panel with proper event handling
-- NotchView - SwiftUI view with open/close animations
-- SessionsListView - shows live + historical sessions
-- SessionChatView - chat UI with streaming
-- PiLogo - custom SwiftUI Shape for Pi branding
-- Menu bar status item (Quit only)
-- Boot animation, hover-to-expand, click-outside-to-close
-- Back button to exit chat and return to sessions list
-- Model selector dropdown in chat header
-- Thinking level badge (reasoning models only)
-- Settings panel (launch at login, show in dock)
-- Green dot for active sessions
-- Auto-scroll to bottom when entering chat
-- Proper @Observable / @Bindable observation chain
+- Session resume via RPC commands
+- Dynamic island UI with notch integration
+- NotchView with open/close animations
+- Sessions list showing live and historical sessions
+- Chat view with markdown rendering and syntax highlighting
 - Thinking messages display (collapsible with streaming)
-- LSUIElement plist fix for proper accessory behavior
-- Markdown rendering with syntax highlighting (MarkdownUI)
-- Tool result syntax highlighting with full-width expandable code blocks
-- Non-activating window behavior
-- Custom main.swift entry point for SPM activation policy
-- Application icon with all resolutions via .icon package + actool
-- Shell environment resolution for Finder launches (VSCode-style approach)
-- Non-activating floating panel behavior
-- Production .app bundle creation script with signing and DMG
+- Model selector dropdown in chat header
+- Settings panel (launch at login, show in dock)
+- Menu bar status item
+- Boot animation, hover-to-expand, click-outside-to-close
+- Application icon with all resolutions
+- Production .app bundle creation with signing and DMG
 
-[Unreleased]: https://github.com/jwintz/pi-island/compare/v0.4.0...HEAD
-[0.4.0]: https://github.com/jwintz/pi-island/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/jwintz/pi-island/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/jwintz/pi-island/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/jwintz/pi-island/releases/tag/v0.1.0
+---
+
+For the raw changelog file, see [CHANGELOG.md on GitHub](https://github.com/jwintz/pi-island/blob/main/CHANGELOG.md).

@@ -16,7 +16,13 @@ set -e
 APP_NAME="Pi Island"
 BUNDLE_ID="me.jwintz.pi-island"
 EXECUTABLE="PiIsland"
-VERSION="0.3.0"
+
+# Get version from git tag, fallback to 0.0.0
+VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "0.0.0")
+
+# Paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Parse arguments
 CREATE_DMG=false
@@ -45,9 +51,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Paths
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+# Build paths
 BUILD_DIR="$PROJECT_DIR/.build/release"
 APP_BUNDLE="$PROJECT_DIR/$APP_NAME.app"
 CONTENTS="$APP_BUNDLE/Contents"

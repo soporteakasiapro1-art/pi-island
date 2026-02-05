@@ -5,6 +5,8 @@
 *.xcworkspace
 DerivedData/
 
+
+
 # Node
 node_modules/
 
@@ -25,3 +27,7 @@ dist/
 
 # Obsidian
 vault/.obsidian/
+
+# Agentic
+AGENTS.md
+PLAN.md

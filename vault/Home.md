@@ -15,6 +15,7 @@ Pi Island is a native macOS application that provides a dynamic island interface
 
 - Real-time session monitoring with visual activity indicators
 - Multi-session management with instant switching
+- AI usage monitoring across multiple providers
 - Markdown rendering with syntax-highlighted code blocks
 - Dynamic updates when using Pi from the terminal
 
@@ -53,6 +54,24 @@ Pi Island uses the MacBook's notch area as its home. The interface:
 - Model selector dropdown
 - Real-time streaming responses
 
+### AI Usage Monitor
+
+Track your AI subscription usage across multiple providers:
+
+- **Anthropic (Claude)**: 5-hour and weekly quotas with extra usage tracking
+- **GitHub Copilot**: Monthly premium interactions quota
+- **Google Gemini CLI**: Pro and Flash model quotas
+- **Google Antigravity**: Per-model quotas for all available models
+- **Synthetic**: Subscription, search, and tool call quotas
+
+Features:
+- Visual progress bars with linear pace markers
+- Period bounds showing start/end times
+- Time elapsed and remaining for each quota
+- Pace comparison (ahead/behind linear usage)
+- Automatic refresh with configurable intervals
+- Notifications for warning and critical thresholds
+
 ## Requirements
 
 - macOS 14.0 or later
@@ -62,5 +81,8 @@ Pi Island uses the MacBook's notch area as its home. The interface:
 ## Next Steps
 
 - [[1.guide/1.installation|Installation Guide]]
+- [[1.guide/2.usage|Usage Guide]]
+- [[1.guide/6.usage-monitor|AI Usage Monitor]]
 - [[2.architecture/1.overview|Architecture Overview]]
 - [[3.development/1.building|Building from Source]]
+- [[Changelog]]

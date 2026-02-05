@@ -6,9 +6,10 @@ import ServiceManagement
 struct SettingsView: View {
     @AppStorage("launchAtLogin") private var launchAtLogin = false
     @AppStorage("showInDock") private var showInDock = false
-    
+
     @Environment(\.dismiss) private var dismiss
-    
+    @State private var showUsageSettings = false
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -16,9 +17,9 @@ struct SettingsView: View {
                 Text("Settings")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white)
-                
+
                 Spacer()
-                
+
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 16))
@@ -28,10 +29,10 @@ struct SettingsView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            
+
             Divider()
                 .background(Color.white.opacity(0.1))
-            
+
             // Settings options
             VStack(spacing: 2) {
                 SettingsToggleRow(
@@ -43,7 +44,7 @@ struct SettingsView: View {
                 .onChange(of: launchAtLogin) { _, newValue in
                     setLaunchAtLogin(enabled: newValue)
                 }
-                
+
                 SettingsToggleRow(
                     title: "Show in Dock",
                     subtitle: "Display app icon in the Dock",
@@ -53,26 +54,77 @@ struct SettingsView: View {
                 .onChange(of: showInDock) { _, newValue in
                     setShowInDock(enabled: newValue)
                 }
+
+                Button(action: { showUsageSettings = true }) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "chart.bar")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.white.opacity(0.7))
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Usage Monitor")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.white)
+
+                            Text("Configure AI provider usage tracking")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.white.opacity(0.5))
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
             .padding(.vertical, 8)
-            
+
             Spacer()
             
             // Version info
             HStack {
-                Text("Pi Island v0.3.0")
+                Text(AppVersion.display)
                     .font(.system(size: 10))
                     .foregroundStyle(.white.opacity(0.4))
             }
             .padding(.bottom, 12)
         }
-        .frame(width: 280, height: 220)
+        .frame(width: 280, height: 280)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
         )
+        .sheet(isPresented: $showUsageSettings) {
+            UsageSettingsSheet()
+        }
+    }
+
+    struct UsageSettingsSheet: View {
+        @Environment(\.dismiss) private var dismiss
+
+        var body: some View {
+            NavigationView {
+                UsageSettingsView()
+                    .navigationTitle("Usage Monitor")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") {
+                                dismiss()
+                            }
+                        }
+                    }
+            }
+            .frame(minWidth: 400, minHeight: 500)
+        }
     }
     
     // MARK: - Launch at Login

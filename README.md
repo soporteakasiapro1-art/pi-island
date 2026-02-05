@@ -2,6 +2,8 @@
 
 A native macOS Dynamic Island-style interface for the [Pi Coding Agent](https://github.com/mariozechner/pi-coding-agent). Pi Island provides a floating notch UI that gives you a glanceable view of your Pi agent's status with full chat capabilities.
 
+<img width="1920" height="1080" alt="612_1x_shots_so" src="https://github.com/user-attachments/assets/7289590b-67df-4e67-9605-8353736acbd4" />
+
 ## Features
 
 ### Core
@@ -93,7 +95,7 @@ Build and sign:
 ./scripts/bundle.sh --sign --dmg
 
 # Build + sign with Developer ID + create DMG (for public distribution)
-./scripts/bundle.sh --sign-id "Developer ID Application: Julien Wintz (TEAM_ID)" --dmg
+./scripts/bundle.sh --sign-id "Developer ID Application: Your Name (TEAM_ID)" --dmg
 ```
 
 This creates `Pi-Island-0.3.0.dmg`. To completely remove the "Apple could not verify..." warning for other users, you must notarize the DMG:

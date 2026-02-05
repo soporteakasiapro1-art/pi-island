@@ -106,6 +106,8 @@ class StatusBarController {
     init(sessionManager: SessionManager) {
         self.sessionManager = sessionManager
         setupStatusItem()
+        // Note: Usage monitoring starts on-demand when the usage view is displayed
+        // for battery efficiency. See UsageNotchView.onAppear/onDisappear.
     }
 
     private func setupStatusItem() {
@@ -116,7 +118,13 @@ class StatusBarController {
             button.image?.isTemplate = true
         }
 
+        updateMenu()
+    }
+
+    private func updateMenu() {
         let menu = NSMenu()
+
+        // Quit
         let quitItem = NSMenuItem(title: "Quit Pi Island", action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)

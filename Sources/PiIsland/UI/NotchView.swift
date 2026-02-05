@@ -297,7 +297,23 @@ struct NotchView: View {
             } else if case .sessions = viewModel.contentType {
                 Spacer()
 
-                // Settings button when showing sessions
+                // Usage button
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        viewModel.showUsage()
+                    }
+                } label: {
+                    Image(systemName: "chart.bar.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.5))
+                        .frame(width: 28, height: 28)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
+
+                // Settings button
                 Button {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                         viewModel.showSettings()
@@ -312,6 +328,29 @@ struct NotchView: View {
                 }
                 .buttonStyle(.plain)
                 .contentShape(Rectangle())
+            } else if case .usage = viewModel.contentType {
+                // Back button for usage view
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        viewModel.exitUsage()
+                    }
+                } label: {
+                    HStack(spacing: 2) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 9, weight: .semibold))
+                        Text("Sessions")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .foregroundStyle(.white.opacity(0.5))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(.rect(cornerRadius: 6))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
             } else {
                 Spacer()
             }
@@ -331,6 +370,8 @@ struct NotchView: View {
                 SessionChatView(session: session)
             case .settings:
                 SettingsContentView(viewModel: viewModel)
+            case .usage:
+                UsageNotchView()
             }
         }
         .frame(width: notchSize.width - 24) // Fixed width creates internal margins
@@ -544,7 +585,7 @@ struct SettingsContentView: View {
             }
 
             // Version info
-            Text("Pi Island v0.3.0")
+            Text(AppVersion.display)
                 .font(.system(size: 10))
                 .foregroundStyle(.white.opacity(0.4))
                 .padding(.bottom, 8)
@@ -646,7 +687,7 @@ struct SessionsListView: View {
         VStack(alignment: .leading, spacing: 8) {
             // Header
             HStack {
-                Text("Sessions")
+                Text("Session Monitor")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white)
 

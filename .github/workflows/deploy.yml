@@ -50,6 +50,7 @@ jobs:
         working-directory: lithos
         env:
           NUXT_APP_BASE_URL: /pi-island/
+          NUXT_PUBLIC_SITE_URL: https://jwintz.github.io/pi-island
           NODE_OPTIONS: "--max-old-space-size=8192"
 
       - name: Upload artifact
