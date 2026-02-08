@@ -6,8 +6,6 @@
 //
 
 import SwiftUI
-import ServiceManagement
-import Combine
 
 // Corner radius constants
 private let cornerRadiusInsets = (
@@ -16,13 +14,13 @@ private let cornerRadiusInsets = (
 )
 
 struct NotchView: View {
-    var viewModel: NotchViewModel
+    let viewModel: NotchViewModel
     @State private var isVisible: Bool = false
     @State private var isHovering: Bool = false
     @State private var shouldBounceLogo: Bool = false
 
     // MARK: - Sizing
-    
+
     /// Extra width for expanding when there's activity (like Dynamic Island)
     private var expansionWidth: CGFloat {
         guard hasActivity else { return 0 }
@@ -32,12 +30,7 @@ struct NotchView: View {
 
     private var notchSize: CGSize {
         switch viewModel.status {
-        case .closed:
-            return CGSize(
-                width: viewModel.closedNotchSize.width + expansionWidth,
-                height: viewModel.closedNotchSize.height
-            )
-        case .hint:
+        case .closed, .hint:
             return CGSize(
                 width: viewModel.closedNotchSize.width + expansionWidth,
                 height: viewModel.closedNotchSize.height
@@ -75,12 +68,9 @@ struct NotchView: View {
 
     private var animationForStatus: Animation {
         switch viewModel.status {
-        case .opened:
-            return openAnimation
-        case .hint:
-            return hintAnimation
-        case .closed:
-            return closeAnimation
+        case .opened: return openAnimation
+        case .hint: return hintAnimation
+        case .closed: return closeAnimation
         }
     }
 
@@ -88,7 +78,6 @@ struct NotchView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            // Outer container does NOT receive hits - only the notch content does
             VStack(spacing: 0) {
                 notchLayout
                     .frame(
@@ -139,12 +128,10 @@ struct NotchView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .preferredColorScheme(.dark)
         .onAppear {
-            // Always visible on non-notched devices
             if !viewModel.hasPhysicalNotch {
                 isVisible = true
             }
-            
-            // Set up bounce animation callback
+
             viewModel.onAgentCompletedForBounce = { [self] in
                 triggerBounceAnimation()
             }
@@ -155,7 +142,6 @@ struct NotchView: View {
         .onChange(of: viewModel.sessionManager.liveSessions) { _, sessions in
             handleSessionsChange(sessions)
         }
-        // Reactive: No timer needed - @Observable drives updates automatically
     }
 
     // MARK: - Notch Layout
@@ -163,11 +149,9 @@ struct NotchView: View {
     @ViewBuilder
     private var notchLayout: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header row - always present, matches physical notch height
             headerRow
                 .frame(height: max(24, viewModel.closedNotchSize.height))
 
-            // Main content only when opened
             if viewModel.status == .opened {
                 contentView
                     .transition(
@@ -188,12 +172,11 @@ struct NotchView: View {
     private var activityState: SessionManager.ActivityState {
         viewModel.sessionManager.activityState
     }
-    
+
     private var hasActivity: Bool {
         activityState != .idle
     }
-    
-    /// Color for activity state
+
     private func activityColor(for state: SessionManager.ActivityState) -> Color {
         switch state {
         case .idle: return .gray
@@ -211,7 +194,7 @@ struct NotchView: View {
     @ViewBuilder
     private var headerRow: some View {
         HStack(spacing: 0) {
-            // Left side - Pi logo (always visible, animates when activity)
+            // Left side - Pi logo
             HStack(spacing: 4) {
                 PiLogo(
                     size: 14,
@@ -227,18 +210,16 @@ struct NotchView: View {
             if viewModel.status == .opened {
                 openedHeaderContent
             } else if !hasActivity {
-                // Closed without activity: empty space
                 Rectangle()
                     .fill(.clear)
                     .frame(width: viewModel.closedNotchSize.width - 20)
             } else {
-                // Closed with activity: black spacer
                 Rectangle()
                     .fill(.black)
                     .frame(width: viewModel.closedNotchSize.width - cornerRadiusInsets.closed.top)
             }
 
-            // Right side - empty for symmetry when closed with activity
+            // Right side - symmetry spacer when closed with activity
             if hasActivity && viewModel.status != .opened {
                 Color.clear
                     .frame(width: sideWidth)
@@ -247,63 +228,37 @@ struct NotchView: View {
         .frame(height: viewModel.closedNotchSize.height)
     }
 
-    private var sideWidth: CGFloat {
-        // Fixed width for side elements (logo and spinner)
-        28
-    }
+    /// Fixed width for side elements (logo area)
+    private var sideWidth: CGFloat { 28 }
 
     // MARK: - Opened Header Content
+
+    private var isChatView: Bool {
+        if case .chat = viewModel.contentType { return true }
+        return false
+    }
+
+    private var isUsageView: Bool {
+        if case .usage = viewModel.contentType { return true }
+        return false
+    }
 
     @ViewBuilder
     private var openedHeaderContent: some View {
         HStack(spacing: 8) {
-            // Left Side: Navigation (Back Button for chat view)
+            // Left Side: Navigation back button
             if case .chat = viewModel.contentType {
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        viewModel.exitChat()
-                    }
-                } label: {
-                    HStack(spacing: 2) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 9, weight: .semibold))
-                        Text("Sessions")
-                            .font(.system(size: 11, weight: .medium))
-                    }
-                    .foregroundStyle(.white.opacity(0.5))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(.rect(cornerRadius: 6))
-                    .contentShape(Rectangle())
+                NotchBackButton(title: "Sessions") {
+                    viewModel.exitChat()
                 }
-                .buttonStyle(.plain)
             } else if case .settings = viewModel.contentType {
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        viewModel.exitSettings()
-                    }
-                } label: {
-                    HStack(spacing: 2) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 9, weight: .semibold))
-                        Text("Back")
-                            .font(.system(size: 11, weight: .medium))
-                    }
-                    .foregroundStyle(.white.opacity(0.5))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(.rect(cornerRadius: 6))
-                    .contentShape(Rectangle())
+                NotchBackButton(title: "Back") {
+                    viewModel.exitSettings()
                 }
-                .buttonStyle(.plain)
             }
 
-            // Center spacer
             Spacer(minLength: isChatView ? 160 : 0)
 
-            // Right Side: Always visible toggle and settings buttons
             // Session/Usage toggle button
             Button {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -343,16 +298,6 @@ struct NotchView: View {
         .padding(.leading, 4)
     }
 
-    private var isChatView: Bool {
-        if case .chat = viewModel.contentType { return true }
-        return false
-    }
-
-    private var isUsageView: Bool {
-        if case .usage = viewModel.contentType { return true }
-        return false
-    }
-
     // MARK: - Content View
 
     @ViewBuilder
@@ -369,7 +314,7 @@ struct NotchView: View {
                 UsageNotchView()
             }
         }
-        .frame(width: notchSize.width - 24) // Fixed width creates internal margins
+        .frame(width: notchSize.width - 24)
     }
 
     // MARK: - Event Handlers
@@ -380,7 +325,8 @@ struct NotchView: View {
             isVisible = true
         case .closed:
             guard viewModel.hasPhysicalNotch else { return }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(350))
                 if viewModel.status == .closed && !hasActivity && viewModel.unreadSession == nil {
                     isVisible = false
                 }
@@ -395,568 +341,41 @@ struct NotchView: View {
     }
 
     private func triggerBounceAnimation() {
-        // Ensure visibility so user can see the bounce
         isVisible = true
-        
-        // Trigger bounce
         shouldBounceLogo = true
-        
-        // Reset after animation completes
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+
+        Task {
+            try? await Task.sleep(for: .milliseconds(600))
             shouldBounceLogo = false
         }
     }
 }
 
-// MARK: - Activity Indicator (phase-specific)
+// MARK: - Back Button
 
-struct ActivityIndicator: View {
-    let state: SessionManager.ActivityState
-    
-    private var stateColor: Color {
-        switch state {
-        case .idle: return .gray
-        case .thinking: return .blue
-        case .executing: return .cyan
-        case .externallyActive: return .yellow
-        case .error: return .red
-        }
-    }
-    
-    var body: some View {
-        switch state {
-        case .thinking:
-            // Brain/thinking icon
-            Image(systemName: "brain")
-                .font(.system(size: 12))
-                .foregroundStyle(stateColor)
-        case .executing:
-            // Tool/wrench icon
-            Image(systemName: "wrench.fill")
-                .font(.system(size: 11))
-                .foregroundStyle(stateColor)
-        case .externallyActive:
-            // Pulse dot
-            PulseDot(color: stateColor)
-        case .error:
-            // Error indicator
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 11))
-                .foregroundStyle(stateColor)
-        case .idle:
-            EmptyView()
-        }
-    }
-}
-
-struct PulseDot: View {
-    let color: Color
-    @State private var isPulsing = false
-    
-    var body: some View {
-        Circle()
-            .fill(color)
-            .frame(width: 8, height: 8)
-            .scaleEffect(isPulsing ? 1.3 : 1.0)
-            .opacity(isPulsing ? 0.7 : 1.0)
-            .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: isPulsing)
-            .onAppear { isPulsing = true }
-    }
-}
-
-// MARK: - Processing Spinner
-
-struct ProcessingSpinner: View {
-    @State private var isAnimating = false
-
-    var body: some View {
-        Circle()
-            .trim(from: 0, to: 0.7)
-            .stroke(Color.white.opacity(0.5), lineWidth: 1.5)
-            .frame(width: 12, height: 12)
-            .rotationEffect(.degrees(isAnimating ? 360 : 0))
-            .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: isAnimating)
-            .onAppear { isAnimating = true }
-    }
-}
-
-// MARK: - Sessions List View
-
-// MARK: - Settings Content View
-
-struct SettingsContentView: View {
-    var viewModel: NotchViewModel
-    @AppStorage("launchAtLogin") private var launchAtLogin = false
-    @AppStorage("showInDock") private var showInDock = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Header
-            HStack {
-                Text("Settings")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
-
-                Spacer()
-            }
-
-            Divider()
-                .background(Color.white.opacity(0.1))
-
-            // Status Legend
-            StatusColorsLegend()
-
-            Divider()
-                .background(Color.white.opacity(0.1))
-
-            // Settings options
-            VStack(spacing: 2) {
-                SettingsToggleRow(
-                    title: "Launch at Login",
-                    subtitle: "Start Pi Island when you log in",
-                    icon: "power",
-                    isOn: $launchAtLogin
-                )
-                .onChange(of: launchAtLogin) { _, newValue in
-                    setLaunchAtLogin(enabled: newValue)
-                }
-
-                SettingsToggleRow(
-                    title: "Show in Dock",
-                    subtitle: "Display app icon in the Dock",
-                    icon: "dock.rectangle",
-                    isOn: $showInDock
-                )
-                .onChange(of: showInDock) { _, newValue in
-                    setShowInDock(enabled: newValue)
-                }
-            }
-
-            Spacer()
-
-            // Update available banner
-            if UpdateChecker.shared.updateAvailable, let version = UpdateChecker.shared.latestVersion {
-                Button(action: { UpdateChecker.shared.openReleasePage() }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "arrow.down.circle.fill")
-                            .font(.system(size: 14))
-                            .foregroundStyle(.green)
-
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("Update Available")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(.white)
-                            Text("v\(version) - Click to download")
-                                .font(.system(size: 9))
-                                .foregroundStyle(.white.opacity(0.6))
-                        }
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.white.opacity(0.4))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color.green.opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-                .buttonStyle(.plain)
-            }
-
-            // Version info
-            Text(AppVersion.display)
-                .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.4))
-                .frame(maxWidth: .infinity)
-        }
-        .padding(.top, 8)
-    }
-
-    private func setLaunchAtLogin(enabled: Bool) {
-        do {
-            if enabled {
-                try SMAppService.mainApp.register()
-            } else {
-                try SMAppService.mainApp.unregister()
-            }
-        } catch {
-            print("Failed to \(enabled ? "enable" : "disable") launch at login: \(error)")
-        }
-    }
-
-    private func setShowInDock(enabled: Bool) {
-        if enabled {
-            NSApp.setActivationPolicy(.regular)
-        } else {
-            NSApp.setActivationPolicy(.accessory)
-        }
-    }
-}
-
-// MARK: - Settings Toggle Row
-
-private struct SettingsToggleRow: View {
+private struct NotchBackButton: View {
     let title: String
-    let subtitle: String
-    let icon: String
-    @Binding var isOn: Bool
+    let action: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 14))
-                .foregroundStyle(.white.opacity(0.7))
-                .frame(width: 24)
-
-            VStack(alignment: .leading, spacing: 2) {
+        Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                action()
+            }
+        } label: {
+            HStack(spacing: 2) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 9, weight: .semibold))
                 Text(title)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white)
-
-                Text(subtitle)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .font(.system(size: 11, weight: .medium))
             }
-
-            Spacer()
-
-            Toggle("", isOn: $isOn)
-                .toggleStyle(.switch)
-                .scaleEffect(0.8)
-                .labelsHidden()
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .contentShape(Rectangle())
-    }
-}
-
-// MARK: - Sessions List View
-
-struct SessionsListView: View {
-    var viewModel: NotchViewModel
-    @Bindable var sessionManager: SessionManager
-    @State private var searchText = ""
-
-    /// Filtered live sessions based on search
-    private var filteredLiveSessions: [ManagedSession] {
-        if searchText.isEmpty {
-            return sessionManager.liveSessions
-        }
-        let query = searchText.lowercased()
-        return sessionManager.liveSessions.filter {
-            $0.projectName.lowercased().contains(query) ||
-            $0.workingDirectory.lowercased().contains(query)
-        }
-    }
-
-    /// Filtered historical sessions based on search
-    private var filteredHistoricalSessions: [ManagedSession] {
-        if searchText.isEmpty {
-            return Array(sessionManager.historicalSessions.prefix(10))
-        }
-        let query = searchText.lowercased()
-        return sessionManager.historicalSessions.filter {
-            $0.projectName.lowercased().contains(query) ||
-            $0.workingDirectory.lowercased().contains(query)
-        }.prefix(20).map { $0 }
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Header
-            HStack {
-                Text("Session Monitor")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
-
-                Spacer()
-
-                // New session button
-                Button(action: { showDirectoryPicker() }) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.blue)
-                }
-                .buttonStyle(.plain)
-                .help("New session")
-
-                Text("\(sessionManager.liveSessions.count) active")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.5))
-            }
-
-            // Search bar
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.4))
-
-                TextField("Search sessions...", text: $searchText)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white)
-
-                if !searchText.isEmpty {
-                    Button(action: { searchText = "" }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.white.opacity(0.4))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
+            .foregroundStyle(.white.opacity(0.5))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
             .background(Color.white.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-
-            Divider()
-                .background(Color.white.opacity(0.1))
-
-            // Normal scroll - sessions at top
-            ScrollView(.vertical, showsIndicators: false) {
-                LazyVStack(spacing: 6) {
-                    // Live sessions first (at top)
-                    ForEach(filteredLiveSessions) { session in
-                        SessionRowView(
-                            session: session,
-                            isSelected: session.id == sessionManager.selectedSessionId,
-                            onStop: {
-                                stopSession(session)
-                            }
-                        )
-                        .onTapGesture {
-                            viewModel.showChat(for: session)
-                        }
-                    }
-
-                    // Historical sessions
-                    if !filteredHistoricalSessions.isEmpty {
-                        Text(searchText.isEmpty ? "Recent" : "Results")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.4))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.top, 8)
-
-                        ForEach(filteredHistoricalSessions) { session in
-                            SessionRowView(
-                                session: session,
-                                isSelected: false,
-                                onDelete: {
-                                    deleteSession(session)
-                                }
-                            )
-                            .onTapGesture {
-                                resumeHistoricalSession(session)
-                            }
-                        }
-                    }
-                }
-                .padding(.vertical, 8)
-            }
-            .frame(maxHeight: .infinity)
+            .clipShape(.rect(cornerRadius: 6))
+            .contentShape(Rectangle())
         }
-        .padding(.top, 8)
-        .frame(maxHeight: .infinity, alignment: .top)
-        .onAppear {
-            // Refresh session list when view appears
-            sessionManager.refreshSessions()
-        }
-    }
-
-    private func showDirectoryPicker() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.message = "Choose a directory for the new Pi session"
-        panel.prompt = "Select"
-        
-        // Run as a standalone window (not as sheet)
-        panel.begin { response in
-            if response == .OK, let url = panel.url {
-                createNewSession(at: url)
-            }
-        }
-    }
-
-    private func createNewSession(at url: URL) {
-        // Get security-scoped access
-        guard url.startAccessingSecurityScopedResource() else {
-            print("Failed to access directory: \(url.path)")
-            return
-        }
-
-        // Capture the path before releasing security scope
-        let path = url.path
-        
-        // Release security scope - we only needed it to verify access
-        // Pi will access the directory directly via its own process
-        url.stopAccessingSecurityScopedResource()
-
-        Task {
-            let session = await sessionManager.createSession(workingDirectory: path)
-            await MainActor.run {
-                viewModel.showChat(for: session)
-            }
-        }
-    }
-
-    private func resumeHistoricalSession(_ session: ManagedSession) {
-        // print("[DEBUG] resumeHistoricalSession: \(session.projectName), messages: \(session.messages.count)")
-
-        // Immediately show the session (provides instant feedback)
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            viewModel.showChat(for: session)
-        }
-
-        // Resume in background - the session will update to live state
-        Task {
-            // print("[DEBUG] Starting resume task...")
-            _ = await sessionManager.resumeSession(session)
-            // print("[DEBUG] Resume complete: \(resumed?.projectName ?? "nil"), messages: \(resumed?.messages.count ?? 0)")
-        }
-    }
-
-    private func stopSession(_ session: ManagedSession) {
-        Task {
-            await sessionManager.removeSession(session.id)
-        }
-    }
-
-    private func deleteSession(_ session: ManagedSession) {
-        Task {
-            do {
-                try await sessionManager.deleteSession(session.id)
-            } catch {
-                // Error already logged in SessionManager
-            }
-        }
-    }
-}
-
-// MARK: - Session Row View
-
-struct SessionRowView: View {
-    @Bindable var session: ManagedSession
-    let isSelected: Bool
-    var onStop: (() -> Void)? = nil
-    var onDelete: (() -> Void)? = nil
-
-    var body: some View {
-        HStack(spacing: 12) { // Increased spacing
-            // Status indicator
-            Circle()
-                .fill(phaseColor)
-                .frame(width: 6, height: 6)
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(session.projectName)
-                    .font(.system(size: 13, weight: .medium)) // Increased from 11
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-
-                if let model = session.model {
-                    Text(model.name ?? model.id)
-                        .font(.system(size: 11)) // Increased from 9
-                        .foregroundStyle(.white.opacity(0.5))
-                } else if !session.isLive {
-                    Text(formatDate(session.lastActivity))
-                        .font(.system(size: 11)) // Increased from 9
-                        .foregroundStyle(.white.opacity(0.4))
-                }
-            }
-
-            Spacer()
-
-            // Stop button for live sessions
-            if session.isLive, let onStop {
-                Button(action: onStop) {
-                    Image(systemName: "stop.circle")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.orange.opacity(0.7))
-                }
-                .buttonStyle(.plain)
-                .help("Stop session")
-            }
-
-            // Delete button for historical sessions
-            if !session.isLive, let onDelete {
-                Button(action: onDelete) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.red.opacity(0.6))
-                }
-                .buttonStyle(.plain)
-            }
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 11)) // Increased from 10
-                .foregroundStyle(.white.opacity(0.3))
-        }
-        .padding(.horizontal, 12) // Increased padding
-        .padding(.vertical, 10)   // Increased padding
-        .background(isSelected ? Color.white.opacity(0.12) : Color.white.opacity(0.06)) // Slightly lighter backgrounds
-        .clipShape(.rect(cornerRadius: 10)) // Smoother corners
-    }
-
-    private var phaseColor: Color {
-        // Check for externally thinking sessions first (terminal pi)
-        if session.isLikelyThinking {
-            return .blue  // Thinking
-        }
-
-        // Check for externally active sessions
-        if session.isLikelyExternallyActive {
-            return .yellow
-        }
-
-        switch session.phase {
-        case .disconnected: return .gray
-        case .starting: return .orange
-        case .idle: return .green
-        case .thinking: return .blue
-        case .executing: return .cyan
-        case .error: return .red
-        }
-    }
-
-    private func formatDate(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
-    }
-}
-// MARK: - Status Legend
-private struct StatusColorsLegend: View {
-    private static let items: [(Color, String)] = [
-        (.green, "Idle"),
-        (.blue, "Thinking"),
-        (.cyan, "Running"),
-        (.yellow, "Active"),
-        (.orange, "Starting"),
-        (.red, "Error"),
-    ]
-
-    var body: some View {
-        HStack(spacing: 0) {
-            ForEach(Array(Self.items.enumerated()), id: \.offset) { index, item in
-                if index > 0 {
-                    Spacer(minLength: 0)
-                }
-                HStack(spacing: 5) {
-                    Circle()
-                        .fill(item.0)
-                        .frame(width: 5, height: 5)
-                    Text(item.1)
-                        .font(.system(size: 9))
-                        .foregroundStyle(.white.opacity(0.5))
-                }
-            }
-        }
-        .frame(maxWidth: .infinity)
+        .buttonStyle(.plain)
     }
 }

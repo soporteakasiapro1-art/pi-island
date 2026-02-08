@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Preserve usage view state when leaving and reentering the notch
 - Move model selector from notch header to session body header
 - Make session/usage toggle always visible with icon reflecting current state (chart for sessions, list for usage)
+- Split NotchView.swift (962 lines) into NotchView, SessionsListView, and SettingsContentView
+- Replace onTapGesture with Button on session rows for proper accessibility
+- Replace showsIndicators parameter with .scrollIndicators(.hidden) modifier
+- Replace lowercased().contains() with localizedStandardContains() for session search
+- Replace DispatchQueue.main.asyncAfter with structured Task.sleep in view handlers
+- Extract duplicated back-button into NotchBackButton component
+- Cache RelativeDateTimeFormatter as static property instead of allocating per row
+- Cache filtered session lists in @State with onChange instead of recomputing in body
+- Change injected viewModel from var to let in NotchView, SessionsListView, SettingsContentView
+
+### Removed
+- Delete unused SettingsView.swift (superseded by SettingsContentView in the notch)
+- Delete dead ActivityIndicator, PulseDot, and ProcessingSpinner views
+- Remove unused Combine import from NotchView
 
 ## [0.4.1] - 2026-02-06
 
