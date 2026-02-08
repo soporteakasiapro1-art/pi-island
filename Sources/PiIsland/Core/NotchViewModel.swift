@@ -44,13 +44,20 @@ enum NotchContentType: Equatable {
 }
 
 @MainActor
-class NotchViewModel: ObservableObject {
-    // MARK: - Published State
+@Observable
+class NotchViewModel {
+    // MARK: - Observable State
 
-    @Published var status: NotchStatus = .closed
-    @Published var openReason: NotchOpenReason = .unknown
-    @Published var contentType: NotchContentType = .sessions
-    @Published var isHovering: Bool = false
+    var status: NotchStatus = .closed {
+        didSet {
+            if status != oldValue {
+                onStatusChange?(status)
+            }
+        }
+    }
+    var openReason: NotchOpenReason = .unknown
+    var contentType: NotchContentType = .sessions
+    var isHovering: Bool = false
 
     // MARK: - Dependencies
 
@@ -80,8 +87,8 @@ class NotchViewModel: ObservableObject {
             )
         case .settings:
             return CGSize(
-                width: min(screenRect.width * 0.35, 320),
-                height: 240
+                width: min(screenRect.width * 0.4, 400),
+                height: 280
             )
         case .usage:
             return CGSize(
@@ -131,6 +138,9 @@ class NotchViewModel: ObservableObject {
 
     /// Callback for when agent completes - used to trigger bounce animation
     var onAgentCompletedForBounce: (() -> Void)?
+
+    /// Callback for when status changes - used by window controller
+    var onStatusChange: ((NotchStatus) -> Void)?
 
     // MARK: - Initialization
 

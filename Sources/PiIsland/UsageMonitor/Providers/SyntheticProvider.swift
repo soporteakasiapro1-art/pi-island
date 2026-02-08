@@ -57,6 +57,10 @@ actor SyntheticProvider: UsageProvider {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return UsageSnapshot.error(.synthetic, .fetchFailed)
         }
+        
+        #if DEBUG
+        print("[Synthetic] Raw JSON: \(json)")
+        #endif
 
         var windows: [RateWindow] = []
 
@@ -100,6 +104,7 @@ actor SyntheticProvider: UsageProvider {
             label: label,
             usedPercent: usedPercent,
             resetDescription: formatReset(resetAt),
+            usageDescription: "\(Int(requests)) / \(Int(limit))",
             resetAt: resetAt
         )
     }

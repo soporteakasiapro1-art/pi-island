@@ -16,7 +16,7 @@ private let cornerRadiusInsets = (
 )
 
 struct NotchView: View {
-    @ObservedObject var viewModel: NotchViewModel
+    var viewModel: NotchViewModel
     @State private var isVisible: Bool = false
     @State private var isHovering: Bool = false
     @State private var shouldBounceLogo: Bool = false
@@ -409,12 +409,12 @@ struct ActivityIndicator: View {
             // Brain/thinking icon
             Image(systemName: "brain")
                 .font(.system(size: 12))
-                .foregroundColor(stateColor)
+                .foregroundStyle(stateColor)
         case .executing:
             // Tool/wrench icon
             Image(systemName: "wrench.fill")
                 .font(.system(size: 11))
-                .foregroundColor(stateColor)
+                .foregroundStyle(stateColor)
         case .externallyActive:
             // Pulse dot
             PulseDot(color: stateColor)
@@ -422,7 +422,7 @@ struct ActivityIndicator: View {
             // Error indicator
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 11))
-                .foregroundColor(stateColor)
+                .foregroundStyle(stateColor)
         case .idle:
             EmptyView()
         }
@@ -465,7 +465,7 @@ struct ProcessingSpinner: View {
 // MARK: - Settings Content View
 
 struct SettingsContentView: View {
-    @ObservedObject var viewModel: NotchViewModel
+    var viewModel: NotchViewModel
     @AppStorage("launchAtLogin") private var launchAtLogin = false
     @AppStorage("showInDock") private var showInDock = false
 
@@ -630,7 +630,7 @@ private struct SettingsToggleRow: View {
 // MARK: - Sessions List View
 
 struct SessionsListView: View {
-    @ObservedObject var viewModel: NotchViewModel
+    var viewModel: NotchViewModel
     @Bindable var sessionManager: SessionManager
     @State private var searchText = ""
 

@@ -39,9 +39,10 @@ struct UsageNotchView: View {
 
             // Provider list
             ScrollView(.vertical, showsIndicators: false) {
-                LazyVStack(spacing: 10) {
+                VStack(spacing: 10) {
                     ForEach(configuredSnapshots) { snapshot in
                         ProviderUsageCard(snapshot: snapshot)
+                            .equatable()
                     }
 
                     if configuredSnapshots.isEmpty {
@@ -52,6 +53,7 @@ struct UsageNotchView: View {
                             .padding(.vertical, 20)
                     }
                 }
+                .frame(maxWidth: .infinity)
             }
             .frame(maxHeight: .infinity)
 
@@ -76,17 +78,25 @@ struct UsageNotchView: View {
         service.configuredSnapshots
     }
 
-    private func timeAgo(_ date: Date) -> String {
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
+        return formatter
+    }()
+
+    private func timeAgo(_ date: Date) -> String {
+        Self.relativeFormatter.localizedString(for: date, relativeTo: Date())
     }
 }
 
 // MARK: - Provider Usage Card
 
-struct ProviderUsageCard: View {
+struct ProviderUsageCard: View, Equatable {
     let snapshot: UsageSnapshot
+
+    nonisolated static func == (lhs: ProviderUsageCard, rhs: ProviderUsageCard) -> Bool {
+        lhs.snapshot == rhs.snapshot
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -117,19 +127,28 @@ struct ProviderUsageCard: View {
             if !snapshot.hasError {
                 ForEach(snapshot.windows, id: \.label) { window in
                     UsageWindowRow(window: window)
+                        .equatable()
                 }
             }
         }
         .padding(10)
         .background(Color.white.opacity(0.06))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+        .onAppear {
+             // Keep debug logging for verification, can be removed later
+             // print("[UsageMonitor] Card appeared: \(snapshot.displayName)")
+        }
     }
 }
 
 // MARK: - Usage Window Row
 
-struct UsageWindowRow: View {
+struct UsageWindowRow: View, Equatable {
     let window: RateWindow
+    
+    nonisolated static func == (lhs: UsageWindowRow, rhs: UsageWindowRow) -> Bool {
+        lhs.window == rhs.window
+    }
 
     /// Period information calculated from reset time and label
     private var periodInfo: PeriodInfo? {
@@ -220,10 +239,14 @@ struct UsageWindowRow: View {
             }
         }
 
-        private func formatDateTime(_ date: Date) -> String {
+        private static let dateTimeFormatter: DateFormatter = {
             let formatter = DateFormatter()
             formatter.dateFormat = "MMM d, HH:mm"
-            return formatter.string(from: date)
+            return formatter
+        }()
+
+        private func formatDateTime(_ date: Date) -> String {
+            Self.dateTimeFormatter.string(from: date)
         }
     }
 
@@ -253,6 +276,13 @@ struct UsageWindowRow: View {
                     .foregroundStyle(.white.opacity(0.7))
 
                 Spacer()
+
+                if let usage = window.usageDescription {
+                    Text(usage)
+                        .font(.system(size: 9))
+                        .foregroundStyle(.white.opacity(0.4))
+                        .padding(.trailing, 4)
+                }
 
                 // Show comparison to linear if available
                 if let expected = expectedUsage {
@@ -341,10 +371,8 @@ struct UsageWindowRow: View {
 
 // MARK: - Preview
 
-struct UsageNotchView_Previews: PreviewProvider {
-    static var previews: some View {
-        UsageNotchView()
-            .frame(width: 300, height: 400)
-            .background(Color.black)
-    }
+#Preview {
+    UsageNotchView()
+        .frame(width: 300, height: 400)
+        .background(Color.black)
 }

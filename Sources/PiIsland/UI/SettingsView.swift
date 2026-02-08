@@ -112,7 +112,7 @@ struct SettingsView: View {
         @Environment(\.dismiss) private var dismiss
 
         var body: some View {
-            NavigationView {
+            NavigationStack {
                 UsageSettingsView()
                     .navigationTitle("Usage Monitor")
                     .toolbar {

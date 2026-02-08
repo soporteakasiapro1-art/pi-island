@@ -37,15 +37,13 @@ struct UsageBarView: View {
     }
 }
 
-struct UsageBarView_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: 8) {
-            UsageBarView(percentage: 25)
-            UsageBarView(percentage: 55)
-            UsageBarView(percentage: 85)
-            UsageBarView(percentage: 95)
-        }
-        .padding()
-        .frame(width: 200)
+#Preview {
+    VStack(spacing: 8) {
+        UsageBarView(percentage: 25)
+        UsageBarView(percentage: 55)
+        UsageBarView(percentage: 85)
+        UsageBarView(percentage: 95)
     }
+    .padding()
+    .frame(width: 200)
 }

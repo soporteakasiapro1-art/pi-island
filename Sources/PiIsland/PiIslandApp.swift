@@ -56,14 +56,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         windowController?.showWindow(nil)
 
         // Subscribe to display changes
-        displayMonitor?.$targetScreen
-            .dropFirst() // Skip initial value
-            .compactMap { $0 }
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] newScreen in
-                self?.windowController?.updateForScreen(newScreen)
-            }
-            .store(in: &cancellables)
+        displayMonitor?.onTargetScreenChange = { [weak self] newScreen in
+            guard let newScreen else { return }
+            self?.windowController?.updateForScreen(newScreen)
+        }
 
         // Create status bar
         statusBarController = StatusBarController(sessionManager: sessionManager!)

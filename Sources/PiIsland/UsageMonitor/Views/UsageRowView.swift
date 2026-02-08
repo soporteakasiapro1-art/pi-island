@@ -24,11 +24,11 @@ struct UsageRowView: View {
                 if let error = snapshot.error {
                     Text(error.code)
                         .font(.caption2)
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                 } else if let requests = snapshot.requestsSummary {
                     Text(requests)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -36,12 +36,12 @@ struct UsageRowView: View {
             if snapshot.hasError {
                 Text(snapshot.error?.message ?? "Unknown error")
                     .font(.caption)
-                    .foregroundColor(.red)
+                    .foregroundStyle(.red)
                     .lineLimit(1)
             } else if snapshot.windows.isEmpty {
                 Text("No usage data")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
             } else {
                 ForEach(snapshot.windows, id: \.label) { window in
                     windowView(window)
@@ -55,7 +55,7 @@ struct UsageRowView: View {
             // Label
             Text(window.label)
                 .font(compact ? .caption2 : .caption)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .frame(width: compact ? 35 : 50, alignment: .leading)
 
             // Bar
@@ -65,37 +65,35 @@ struct UsageRowView: View {
             // Percentage
             Text("\(Int(window.usedPercent))%")
                 .font(compact ? .caption2 : .caption)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .frame(width: 30, alignment: .trailing)
 
             // Reset time (if available and not compact)
             if !compact, let reset = window.resetDescription {
                 Text(reset)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .frame(width: 40, alignment: .trailing)
             }
         }
     }
 }
 
-struct UsageRowView_Previews: PreviewProvider {
-    static var previews: some View {
-        let snapshot = UsageSnapshot(
-            provider: .anthropic,
-            windows: [
-                RateWindow(label: "5h", usedPercent: 45, resetDescription: "in 2h"),
-                RateWindow(label: "Week", usedPercent: 67, resetDescription: "in 2d")
-            ],
-            extraUsageEnabled: false
-        )
+#Preview {
+    let snapshot = UsageSnapshot(
+        provider: .anthropic,
+        windows: [
+            RateWindow(label: "5h", usedPercent: 45, resetDescription: "in 2h"),
+            RateWindow(label: "Week", usedPercent: 67, resetDescription: "in 2d")
+        ],
+        extraUsageEnabled: false
+    )
 
-        VStack {
-            UsageRowView(snapshot: snapshot, compact: false)
-            Divider()
-            UsageRowView(snapshot: snapshot, compact: true)
-        }
-        .padding()
-        .frame(width: 300)
+    return VStack {
+        UsageRowView(snapshot: snapshot, compact: false)
+        Divider()
+        UsageRowView(snapshot: snapshot, compact: true)
     }
+    .padding()
+    .frame(width: 300)
 }

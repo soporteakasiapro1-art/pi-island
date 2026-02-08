@@ -103,7 +103,7 @@ struct ProviderToggleRow: View {
     var body: some View {
         HStack {
             Image(systemName: provider.iconName ?? "cpu")
-                .foregroundColor(hasCredentials ? .primary : .secondary)
+                .foregroundStyle(hasCredentials ? .primary : .secondary)
                 .frame(width: 24)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -113,7 +113,7 @@ struct ProviderToggleRow: View {
                 if !hasCredentials {
                     Text("Not configured")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -143,7 +143,7 @@ struct UsageDetailView: View {
             if service.snapshots.isEmpty {
                 Section {
                     Text("No usage data available. Enable providers in settings.")
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
@@ -161,10 +161,8 @@ struct UsageDetailView: View {
     }
 }
 
-struct UsageSettingsView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationView {
-            UsageSettingsView()
-        }
+#Preview {
+    NavigationStack {
+        UsageSettingsView()
     }
 }

@@ -9,6 +9,34 @@ import Foundation
 import Combine
 import UserNotifications
 
+import OSLog
+
+private let logger = Logger(subsystem: "com.pi-island", category: "UsageMonitor")
+
+private func debugLog(_ message: String) {
+    #if DEBUG
+    print("[UsageMonitor] \(message)")
+    #else
+    logger.debug("\(message)")
+    #endif
+}
+
+private func infoLog(_ message: String) {
+    #if DEBUG
+    print("[UsageMonitor] \(message)")
+    #else
+    logger.info("\(message)")
+    #endif
+}
+
+private func errorLog(_ message: String) {
+    #if DEBUG
+    print("[UsageMonitor] ERROR: \(message)")
+    #else
+    logger.error("\(message)")
+    #endif
+}
+
 /// Service for monitoring usage across all AI providers
 @MainActor
 @Observable
@@ -146,15 +174,18 @@ final class UsageMonitorService {
 
     /// Refresh all enabled providers
     func refreshAll() async {
-        guard !isRefreshing else { return }
-
-        isRefreshing = true
-        defer {
-            isRefreshing = false
-            lastRefreshTime = Date()
+        guard !isRefreshing else {
+            debugLog("Skipping refresh: already in progress")
+            return
         }
 
+        infoLog("Starting refreshAll")
+        let startTime = Date()
+        isRefreshing = true
+
         let oldSnapshots = snapshots
+
+        var newSnapshots = snapshots
 
         await withTaskGroup(of: (AIProvider, UsageSnapshot).self) { group in
             for provider in enabledProviders {
@@ -167,14 +198,30 @@ final class UsageMonitorService {
             }
 
             for await (provider, snapshot) in group {
-                snapshots[provider] = snapshot
+                newSnapshots[provider] = snapshot
             }
         }
+        
+        // Batch update to prevent multiple view refresh cycles
+        debugLog("Updating service state...")
+        let updateStart = Date()
+        
+        // Update all published properties together to coalesce UI updates
+        self.snapshots = newSnapshots
+        self.lastRefreshTime = Date()
+        self.isRefreshing = false
+        
+        debugLog("Updated service state in \(Date().timeIntervalSince(updateStart))s")
 
         // Check for threshold crossings and send notifications
         if notificationsEnabled {
+            debugLog("Checking thresholds...")
+            let checkStart = Date()
             checkThresholdsAndNotify(oldSnapshots: oldSnapshots)
+            debugLog("Checked thresholds in \(Date().timeIntervalSince(checkStart))s")
         }
+        
+        infoLog("Finished refreshAll in \(Date().timeIntervalSince(startTime))s")
     }
 
     /// Refresh a specific provider
@@ -237,9 +284,35 @@ final class UsageMonitorService {
     // MARK: - Private
 
     private func fetchWithTimeout(_ provider: any UsageProvider) async -> UsageSnapshot {
+        let providerId = provider.id.rawValue
+        debugLog("Fetching usage for \(providerId)")
+        let start = Date()
+
         do {
-            return try await provider.fetchUsage()
+            // Enforce a hard timeout on the provider's fetch
+            // This prevents a single provider from stalling the entire refresh
+            return try await withThrowingTaskGroup(of: UsageSnapshot.self) { group in
+                group.addTask {
+                    let result = try await provider.fetchUsage()
+                    return result
+                }
+
+                group.addTask {
+                    // Use a slightly longer timeout than the provider's internal timeout
+                    try await Task.sleep(nanoseconds: 15 * 1_000_000_000) // 15 seconds
+                    throw UsageError.timeout
+                }
+
+                let result = try await group.next()!
+                group.cancelAll()
+                debugLog("Fetched \(providerId) in \(Date().timeIntervalSince(start))s")
+                return result
+            }
         } catch {
+            errorLog("Failed to fetch \(providerId) after \(Date().timeIntervalSince(start))s: \(error.localizedDescription)")
+            if let usageError = error as? UsageError {
+                return UsageSnapshot.error(provider.id, usageError)
+            }
             return UsageSnapshot.error(provider.id, .unknown(error.localizedDescription))
         }
     }

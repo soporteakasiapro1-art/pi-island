@@ -31,7 +31,7 @@ struct UsageMenuView: View {
             if service.snapshots.isEmpty {
                 Text("No providers configured")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
             } else {
                 ForEach(Array(service.snapshots.values.sorted(by: { $0.displayName < $1.displayName }))) { snapshot in
                     UsageRowView(snapshot: snapshot, compact: true)
@@ -50,7 +50,7 @@ struct UsageMenuView: View {
                 if let lastUpdate = service.lastRefreshTime {
                     Text("Updated \(timeAgo(lastUpdate))")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
 
                 Spacer()
@@ -68,15 +68,17 @@ struct UsageMenuView: View {
         .frame(width: 280)
     }
 
-    private func timeAgo(_ date: Date) -> String {
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
+        return formatter
+    }()
+
+    private func timeAgo(_ date: Date) -> String {
+        Self.relativeFormatter.localizedString(for: date, relativeTo: Date())
     }
 }
 
-struct UsageMenuView_Previews: PreviewProvider {
-    static var previews: some View {
-        UsageMenuView()
-    }
+#Preview {
+    UsageMenuView()
 }

@@ -10,12 +10,22 @@ import Combine
 
 /// Monitors display configuration changes and tracks the target screen for the notch
 @MainActor
-class DisplayMonitor: ObservableObject {
+@Observable
+class DisplayMonitor {
     /// The screen where the notch should appear (built-in if available, otherwise main)
-    @Published private(set) var targetScreen: NSScreen?
+    private(set) var targetScreen: NSScreen? {
+        didSet {
+            if targetScreen != oldValue {
+                onTargetScreenChange?(targetScreen)
+            }
+        }
+    }
 
     /// Whether the target screen has a physical notch
-    @Published private(set) var hasPhysicalNotch: Bool = false
+    private(set) var hasPhysicalNotch: Bool = false
+
+    /// Callback for when target screen changes - used by app delegate
+    var onTargetScreenChange: ((NSScreen?) -> Void)?
 
     private var observer: NSObjectProtocol?
 

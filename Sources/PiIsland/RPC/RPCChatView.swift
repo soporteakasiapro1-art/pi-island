@@ -140,7 +140,7 @@ struct SessionChatView: View {
 
             Text(session.projectName)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.white.opacity(0.85))
+                .foregroundStyle(.white.opacity(0.85))
                 .lineLimit(1)
 
             Spacer()

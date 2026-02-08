@@ -44,21 +44,18 @@ class NotchWindowController: NSWindowController {
         notchWindow.setFrame(windowFrame, display: true)
 
         // Toggle mouse event handling based on notch state
-        viewModel.$status
-            .receive(on: DispatchQueue.main)
-            .sink { [weak notchWindow, weak viewModel] status in
-                switch status {
-                case .opened:
-                    notchWindow?.ignoresMouseEvents = false
-                    // Make window key and order front for input
-                    if viewModel?.openReason != .notification {
-                        notchWindow?.makeKeyAndOrderFront(nil)
-                    }
-                case .closed, .hint:
-                    notchWindow?.ignoresMouseEvents = true
+        viewModel.onStatusChange = { [weak notchWindow, weak viewModel] status in
+            switch status {
+            case .opened:
+                notchWindow?.ignoresMouseEvents = false
+                // Make window key and order front for input
+                if viewModel?.openReason != .notification {
+                    notchWindow?.makeKeyAndOrderFront(nil)
                 }
+            case .closed, .hint:
+                notchWindow?.ignoresMouseEvents = true
             }
-            .store(in: &cancellables)
+        }
 
         // Start with ignoring mouse events
         notchWindow.ignoresMouseEvents = true

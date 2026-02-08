@@ -18,6 +18,9 @@ struct RateWindow: Codable, Sendable, Equatable {
     /// Human-readable reset description (e.g., "in 2h", "tomorrow")
     let resetDescription: String?
 
+    /// Human-readable usage description (e.g., "150 / 2000")
+    let usageDescription: String?
+
     /// ISO 8601 timestamp when the quota resets
     let resetAt: Date?
 
@@ -25,11 +28,13 @@ struct RateWindow: Codable, Sendable, Equatable {
         label: String,
         usedPercent: Double,
         resetDescription: String? = nil,
+        usageDescription: String? = nil,
         resetAt: Date? = nil
     ) {
         self.label = label
         self.usedPercent = max(0, min(100, usedPercent))
         self.resetDescription = resetDescription
+        self.usageDescription = usageDescription
         self.resetAt = resetAt
     }
 
